@@ -67,16 +67,18 @@
 
 /* Continuous Running Marquee Ticker */
 @keyframes marquee-scroll {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }
 
 .animate-marquee {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
-  animation: marquee-scroll 18s linear infinite;
+  animation: marquee-scroll 25s linear infinite;
 }
 
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+

@@ -68,9 +68,17 @@ export default function SidePanelLayout({
   const top2Streak = top2User.streak || 10;
   const top2Xp = top2User.xp || 980;
 
-  const tickerText = isUserTop1
-    ? `👑 Bạn đang dẫn đầu Bảng Xếp Hạng với chuỗi ${streak} ngày (${xp} XP)! Đỉnh cao phong độ! 💪          ⚡ Top 2: ${top2Name} (${top2Streak} ngày - ${top2Xp} XP)          🎯 Hãy giữ vững phong độ Quán Quân nhé! 🚀`
-    : `🔥 Học Viên ${top1Name} đang giữ chuỗi ${top1Streak} ngày với ${top1Xp} XP. Đừng để bạn ấy vượt qua, cố lên! 💪          ⚡ Top 2: ${top2Name} (${top2Streak} ngày  - ${top2Xp} XP)          🎯 Bạn đang có (${streak} ngày  - ${xp} XP) — Tiếp tục cày để lên Top 1 nào! 🚀`;
+  const tickerItems = isUserTop1
+    ? [
+        `👑 Bạn đang dẫn đầu Bảng Xếp Hạng với chuỗi ${streak} ngày (${xp} XP)! Đỉnh cao phong độ! 💪`,
+        `⚡ Top 2: ${top2Name} (${top2Streak} ngày - ${top2Xp} XP)`,
+        `🎯 Hãy giữ vững phong độ Quán Quân nhé! 🚀`
+      ]
+    : [
+        `🔥 Học Viên ${top1Name} đang giữ chuỗi ${top1Streak} ngày với ${top1Xp} XP. Đừng để bạn ấy vượt qua, cố lên! 💪`,
+        `⚡ Top 2: ${top2Name} (${top2Streak} ngày - ${top2Xp} XP)`,
+        `🎯 Bạn đang có (${streak} ngày - ${xp} XP) — Tiếp tục cày để lên Top 1 nào! 🚀`
+      ];
 
   const tabs = [
     { id: 'vault', label: 'Lật thẻ SRS', icon: Layers },
@@ -129,7 +137,16 @@ export default function SidePanelLayout({
         </div>
         <div className="overflow-hidden w-full relative flex items-center">
           <div className="animate-marquee whitespace-nowrap font-black text-slate-900">
-            {tickerText}
+            {tickerItems.map((item, idx) => (
+              <span key={`t1-${idx}`} className="inline-block pr-44 shrink-0">
+                {item}
+              </span>
+            ))}
+            {tickerItems.map((item, idx) => (
+              <span key={`t2-${idx}`} className="inline-block pr-44 shrink-0">
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </div>

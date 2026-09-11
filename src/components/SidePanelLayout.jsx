@@ -130,20 +130,20 @@ export default function SidePanelLayout({
         </div>
       </header>
 
-      {/* Continuous Marquee Rivalry Ticker Bar (Dòng chữ chạy liên tục cạnh tranh) */}
-      <div className="bg-[#FFFDF0] border-b-[1.8px] border-slate-900 px-2 py-1 shrink-0 z-25 flex items-center overflow-hidden text-[10px] font-black text-slate-900 shadow-[0_1px_0_0_#18181B]">
-        <div className="bg-amber-300 text-slate-900 px-1.5 py-0.2 rounded border border-slate-900 text-[8px] font-black uppercase tracking-wider shrink-0 mr-1.5 flex items-center gap-1 shadow-[1px_1px_0px_0px_#18181B]">
-          <Flame className="w-2.5 h-2.5 text-amber-600 fill-amber-500" /> THÁCH THỨC
+      {/* Continuous Marquee Rivalry Ticker Bar (Dòng chữ chạy liên tục cạnh tranh - Khung & Chữ to nổi bật) */}
+      <div className="bg-[#FFFBDB] border-b-[2px] border-slate-900 px-2.5 py-1.5 shrink-0 z-25 flex items-center overflow-hidden text-xs font-black text-slate-900 shadow-[0_2px_0_0_#18181B]">
+        <div className="bg-amber-300 text-slate-900 px-2 py-0.5 rounded-md border-[1.8px] border-slate-900 text-[9px] font-black uppercase tracking-wider shrink-0 mr-2 flex items-center gap-1 shadow-[1.5px_1.5px_0px_0px_#18181B]">
+          <Flame className="w-3 h-3 text-amber-600 fill-amber-500 animate-pulse" /> THÁCH THỨC
         </div>
         <div className="overflow-hidden w-full relative flex items-center">
-          <div className="animate-marquee whitespace-nowrap font-black text-slate-900">
+          <div className="animate-marquee whitespace-nowrap font-black text-slate-900 text-[11.5px] tracking-tight">
             {tickerItems.map((item, idx) => (
-              <span key={`t1-${idx}`} className="inline-block pr-44 shrink-0">
+              <span key={`t1-${idx}`} className="inline-block pr-48 shrink-0">
                 {item}
               </span>
             ))}
             {tickerItems.map((item, idx) => (
-              <span key={`t2-${idx}`} className="inline-block pr-44 shrink-0">
+              <span key={`t2-${idx}`} className="inline-block pr-48 shrink-0">
                 {item}
               </span>
             ))}

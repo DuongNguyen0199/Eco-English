@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Eco English - Trợ lý Học Tiếng Anh B1-C2",
+  "version": "1.0.0",
+  "description": "Tiện ích Chrome giúp nhập cụm từ hay, lật thẻ SRS, luyện tập ngẫu nhiên và học theo lộ trình B1-C2 trên Side Panel.",
+  "permissions": [
+    "storage",
+    "sidePanel"
+  ],
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "action": {
+    "default_title": "Mở Eco English Side Panel",
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PhraseVaultTab from './PhraseVaultTab';
 import RandomExerciseTab from './RandomExerciseTab';
 import LeaderboardTab from './LeaderboardTab';
@@ -7,6 +7,7 @@ import LeaderboardModal from './LeaderboardModal';
 import CurvedBottomNav from './CurvedBottomNav';
 import { LEVEL_DESCRIPTIONS } from '../data/cefrData';
 import { Layers, Dumbbell, Settings, Flame, BookMarked, Target, Trophy } from 'lucide-react';
+import { supabaseService } from '../services/supabaseService';
 
 export default function SidePanelLayout({
   userLevel,
@@ -24,6 +25,52 @@ export default function SidePanelLayout({
   const [activeTab, setActiveTab] = useState('vault'); // Default: 'vault' (Lật thẻ SRS)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState('');
+
+  useEffect(() => {
+    async function initTickerData() {
+      const uId = await supabaseService.getUserId();
+      setCurrentUserId(uId);
+
+      const data = await supabaseService.getLeaderboard();
+      if (Array.isArray(data) && data.length > 0) {
+        setLeaderboardData(data);
+      }
+    }
+    initTickerData();
+    const timer = setInterval(initTickerData, 30000);
+    return () => clearInterval(timer);
+  }, [xp, streak]);
+
+  // Construct dynamic Top 1 and Top 2 users
+  const top1User = leaderboardData[0] || {
+    id: 'robert_def',
+    display_name: 'Robert',
+    streak: Math.max(streak + 3, 14),
+    xp: Math.max(xp + 200, 1250)
+  };
+
+  const top2User = leaderboardData[1] || {
+    id: 'emma_def',
+    display_name: 'Emma',
+    streak: Math.max(streak + 1, 10),
+    xp: Math.max(xp + 80, 980)
+  };
+
+  const isUserTop1 = top1User.id === currentUserId;
+
+  const top1Name = top1User.display_name || 'Robert';
+  const top1Streak = top1User.streak || 14;
+  const top1Xp = top1User.xp || 1250;
+
+  const top2Name = top2User.display_name || 'Emma';
+  const top2Streak = top2User.streak || 10;
+  const top2Xp = top2User.xp || 980;
+
+  const tickerText = isUserTop1
+    ? `👑 Bạn đang dẫn đầu Bảng Xếp Hạng với chuỗi ${streak} ngày (${xp} XP)! Đỉnh cao phong độ! 💪          ⚡ Top 2: ${top2Name} (${top2Streak} ngày - ${top2Xp} XP)          🎯 Hãy giữ vững phong độ Quán Quân nhé! 🚀`
+    : `🔥 Học Viên ${top1Name} đang giữ chuỗi ${top1Streak} ngày với ${top1Xp} XP. Đừng để bạn ấy vượt qua, cố lên! 💪          ⚡ Top 2: ${top2Name} (${top2Streak} ngày  - ${top2Xp} XP)          🎯 Bạn đang có (${streak} ngày  - ${xp} XP) — Tiếp tục cày để lên Top 1 nào! 🚀`;
 
   const tabs = [
     { id: 'vault', label: 'Lật thẻ SRS', icon: Layers },
@@ -82,10 +129,11 @@ export default function SidePanelLayout({
         </div>
         <div className="overflow-hidden w-full relative flex items-center">
           <div className="animate-marquee whitespace-nowrap font-black text-slate-900">
-            🔥 Học Viên Robert đang giữ chuỗi {Math.max(streak + 3, 14)} ngày với {Math.max(xp + 200, 1250)} XP. Đừng để bạn ấy vượt qua, cố lên! 💪 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ⚡ Top 2: Emma ({Math.max(xp + 80, 980)} XP) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎯 Bạn đang có {streak} ngày ({xp} XP) — Tiếp tục cày để lên Top 1 nào! 🚀
+            {tickerText}
           </div>
         </div>
       </div>
+
 
       {/* Pinned Goal Line (Dòng chữ ghim mục tiêu làm chủ) */}
       <div className="bg-[#FEF08A] border-b-[1.8px] border-slate-900 px-3 py-1.5 shrink-0 z-20 shadow-[0_1.5px_0_0_#18181B] flex items-center justify-between">

@@ -19,11 +19,11 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
   const [editingPhrase, setEditingPhrase] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  const handleAutoGenerateExample = async (targetPhrase, targetMeaning, isEditMode = false) => {
+  const handleAutoGenerateExample = async (targetPhrase, targetMeaning, targetContext = '', isEditMode = false) => {
     if (!targetPhrase || !targetPhrase.trim()) return;
     setIsGeneratingAI(true);
     try {
-      const { example, translation } = await aiService.generateExampleAndTranslation(targetPhrase, targetMeaning);
+      const { example, translation } = await aiService.generateExampleAndTranslation(targetPhrase, targetMeaning, targetContext);
       if (isEditMode) {
         setEditingPhrase(prev => prev ? ({
           ...prev,
@@ -342,7 +342,7 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
               {newPhrase.phrase && (
                 <button
                   type="button"
-                  onClick={() => handleAutoGenerateExample(newPhrase.phrase, newPhrase.meaning, false)}
+                  onClick={() => handleAutoGenerateExample(newPhrase.phrase, newPhrase.meaning, newPhrase.context, false)}
                   disabled={isGeneratingAI}
                   className="text-[9px] font-extrabold text-indigo-950 bg-indigo-100 border border-indigo-400 px-1.5 py-0.2 rounded flex items-center gap-1 hover:bg-indigo-200 transition-all disabled:opacity-60"
                   title="Nhờ AI tự động tạo 1 câu ví dụ tiếng Anh đơn giản và dịch tiếng Việt"
@@ -791,7 +791,7 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                   {editingPhrase.phrase && (
                     <button
                       type="button"
-                      onClick={() => handleAutoGenerateExample(editingPhrase.phrase, editingPhrase.meaning, true)}
+                      onClick={() => handleAutoGenerateExample(editingPhrase.phrase, editingPhrase.meaning, editingPhrase.context, true)}
                       disabled={isGeneratingAI}
                       className="text-[9px] font-extrabold text-indigo-950 bg-indigo-100 border border-indigo-400 px-1.5 py-0.2 rounded flex items-center gap-1 hover:bg-indigo-200 transition-all disabled:opacity-60"
                       title="Nhờ AI tự động tạo 1 câu ví dụ tiếng Anh đơn giản và dịch tiếng Việt"

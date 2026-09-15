@@ -1,64 +1,128 @@
 /**
- * AI Sentence Generator & Translation Service for Eco English
- * Automatically generates simple English example sentences and accurate Vietnamese translations.
+ * AI Sentence Generator & Translation Engine for Eco English
+ * Generates highly natural, context-aware English example sentences and fluent Vietnamese translations.
  */
 
-const PREBUILT_PATTERNS = [
+// Comprehensive Context-Aware Natural English Sentence Database & Dynamic Scenario Generators
+const SCENARIO_GENERATORS = [
+  // 1. Workplace, Meetings & Projects
   {
-    kw: ['break the ice'],
-    en: 'A friendly smile can help break the ice in a meeting.',
-    vi: 'Một nụ cười thân thiện có thể giúp phá tan bầu không khí ngượng ngùng trong cuộc họp.'
+    tags: ['work', 'job', 'project', 'meeting', 'họp', 'công việc', 'dự án', 'báo cáo', 'email', 'chính thức', 'formal', 'lập kế hoạch'],
+    templates: [
+      (p) => `During yesterday's team meeting, we had to ${p} to ensure the project stays on schedule.`,
+      (p) => `Our project manager encouraged everyone to ${p} before submitting the final proposal.`,
+      (p) => `She successfully managed to ${p} during the client presentation this morning.`,
+      (p) => `To achieve our quarterly goals, it is essential for the team to ${p}.`
+    ]
   },
+  // 2. Decision Making & Problem Solving
   {
-    kw: ['keep in touch'],
-    en: "Let's keep in touch after the project finishes.",
-    vi: 'Hãy giữ liên lạc sau khi dự án kết thúc nhé.'
+    tags: ['decision', 'think', 'idea', 'solution', 'quyết định', 'suy nghĩ', 'ý tưởng', 'giải pháp', 'do dự', 'cân nhắc', 'lựa chọn'],
+    templates: [
+      (p) => `After reviewing all available choices, she decided to ${p} for long-term success.`,
+      (p) => `Finding an effective way to ${p} helped us resolve the issue without further delay.`,
+      (p) => `It requires careful consideration to ${p} when facing complex situations.`,
+      (p) => `Before making a commitment, you should always take time to ${p}.`
+    ]
   },
+  // 3. Finance, Tech, Business & Academic
   {
-    kw: ['take a risk', 'take risks'],
-    en: 'Sometimes you have to take a risk to achieve success.',
-    vi: 'Đôi khi bạn phải chấp nhận rủi ro để đạt được thành công.'
+    tags: ['money', 'finance', 'budget', 'cost', 'tech', 'ai', 'academic', 'ielts', 'kinh tế', 'tài chính', 'ngân sách', 'chi phí', 'công nghệ', 'nghiên cứu'],
+    templates: [
+      (p) => `Recent market research shows that companies must ${p} to stay competitive.`,
+      (p) => `This technological breakthrough will help ${p} for future developments in the industry.`,
+      (p) => `Financial advisors strongly recommend that individuals ${p} to minimize risks.`,
+      (p) => `The study sheds light on how organizations can ${p} more effectively.`
+    ]
   },
+  // 4. Daily Life, Health & Relationships
   {
-    kw: ['make progress'],
-    en: 'He is making steady progress in learning English every day.',
-    vi: 'Anh ấy đang tiến bộ đều đặn trong việc học tiếng Anh mỗi ngày.'
-  },
-  {
-    kw: ['look on the bright side'],
-    en: 'Try to look on the bright side even when things get difficult.',
-    vi: 'Hãy cố gắng nhìn vào mặt tích cực ngay cả khi mọi thứ trở nên khó khăn.'
-  },
-  {
-    kw: ['give up'],
-    en: 'Never give up on your goals regardless of challenges.',
-    vi: 'Đừng bao giờ từ bỏ mục tiêu của bạn bất kể những khó khăn.'
-  },
-  {
-    kw: ['come across'],
-    en: 'I came across a very useful English book yesterday.',
-    vi: 'Tôi tình cờ bắt gặp một cuốn sách tiếng Anh rất hữu ích ngày hôm qua.'
-  },
-  {
-    kw: ['hit the nail on the head'],
-    en: 'Her explanation really hit the nail on the head.',
-    vi: 'Lời giải thích của cô ấy thực sự đánh đúng trọng tâm vấn đề.'
-  },
-  {
-    kw: ['out of the blue'],
-    en: 'She called me out of the blue after five years.',
-    vi: 'Cô ấy đã gọi điện cho tôi một cách hoàn toàn bất ngờ sau năm năm.'
-  },
-  {
-    kw: ['once in a blue moon'],
-    en: 'He only visits his hometown once in a blue moon.',
-    vi: 'Anh ấy chỉ thỉnh thoảng mới về thăm quê một lần.'
+    tags: ['life', 'health', 'daily', 'friend', 'time', 'sức khỏe', 'đời sống', 'bạn bè', 'thời gian', 'thói quen', 'giao tiếp'],
+    templates: [
+      (p) => `My doctor advised me to ${p} in order to maintain a healthier lifestyle.`,
+      (p) => `Even though we live in different cities, we still try to ${p} as often as possible.`,
+      (p) => `Whenever you feel stressed, taking time to ${p} can make a huge difference.`,
+      (p) => `Learning how to ${p} is one of the most rewarding parts of personal growth.`
+    ]
   }
 ];
 
+// Spoken idioms & fixed full sentence expressions override
+const EXPRESSIONS_DICTIONARY = {
+  "i'm having second thoughts": "I was going to buy that expensive car, but now I'm having second thoughts.",
+  "im having second thoughts": "I was going to sign the contract, but now I'm having second thoughts.",
+  "come again": "Could you come again? I couldn't hear what you just said.",
+  "it's up to you": "You can choose either Italian or Japanese food for dinner; it's up to you.",
+  "its up to you": "Whether we leave now or wait a bit longer is entirely up to you.",
+  "i get it": "Thanks for explaining the problem so clearly; now I get it.",
+  "break the ice": "A warm smile and a light joke helped break the ice at the start of the conference.",
+  "keep in touch": "Let's keep in touch after graduation.",
+  "take a risk": "Sometimes you need to take a risk to achieve your biggest dreams.",
+  "make progress": "She has been making great progress in her English speaking skills this month.",
+  "look on the bright side": "Even when plans fall through, I try to look on the bright side.",
+  "give up": "Never give up on your goals, no matter how tough the journey gets.",
+  "come across": "I came across a rare vintage record while browsing the local market.",
+  "hit the nail on the head": "Your analysis of the market trend really hit the nail on the head.",
+  "out of the blue": "An old college friend called me out of the blue yesterday evening.",
+  "once in a blue moon": "Because he lives abroad, he only comes back to visit once in a blue moon.",
+  "pave the way for": "This pioneering medical discovery paved the way for effective new treatments.",
+  "take into account": "You should take inflation and market volatility into account when budgeting.",
+  "a double-edged sword": "Social media can be a double-edged sword for teenagers nowadays.",
+  "play a vital role in": "Education plays a vital role in promoting sustainable economic growth.",
+  "cut down on": "To improve his physical fitness, he decided to cut down on sugary drinks.",
+  "shed light on": "The newly discovered historical documents shed light on the ancient civilization.",
+  "strike a balance": "It is essential to strike a healthy balance between work responsibilities and family life.",
+  "at the expense of": "He achieved career fame at the expense of his personal health.",
+  "call into question": "The recent audit results called into question the reliability of the company's records.",
+  "stem from": "Most interpersonal conflicts stem from poor communication and misunderstandings.",
+  "tipping point": "Scientists warn that deforestation is bringing the ecosystem close to a critical tipping point.",
+  "part and parcel of": "Overcoming temporary setbacks is part and parcel of building a successful business.",
+  "in lieu of": "The organization provided additional paid vacation days in lieu of cash bonuses.",
+  "wreak havoc on": "The severe tropical storm wreaked havoc on the coastal infrastructure.",
+  "bear fruit": "Her years of persistent dedication finally bore fruit when she published her novel."
+};
+
 export const aiService = {
   /**
-   * Generate an English example sentence and Vietnamese translation for a phrase.
+   * Fetch natural translation from Google Translate GTX / MyMemory API
+   */
+  async translateToVietnamese(text) {
+    if (!text || !text.trim()) return '';
+    const cleanText = text.trim();
+
+    // 1. Google Translate GTX Endpoint (Fast, Free & Fluent)
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(cleanText)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data[0] && Array.isArray(data[0])) {
+        const translatedParts = data[0].map(part => part[0]).filter(Boolean);
+        if (translatedParts.length > 0) {
+          return translatedParts.join(' ').trim();
+        }
+      }
+    } catch (err) {
+      console.warn('Google Translate GTX unavailable, trying MyMemory fallback:', err.message);
+    }
+
+    // 2. MyMemory Translation API Fallback
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=en|vi`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data.responseData && data.responseData.translatedText) {
+        return data.responseData.translatedText.trim();
+      }
+    } catch (err) {
+      console.warn('MyMemory fallback unavailable:', err.message);
+    }
+
+    return '';
+  },
+
+  /**
+   * Main Generator Method:
+   * Generates a context-aware natural English sentence using the phrase, and its accurate Vietnamese translation.
    */
   async generateExampleAndTranslation(phraseText = '', meaningText = '', contextText = '') {
     if (!phraseText || !phraseText.trim()) {
@@ -68,54 +132,46 @@ export const aiService = {
     const cleanPhrase = phraseText.trim();
     const lowerPhrase = cleanPhrase.toLowerCase();
 
-    // 1. Check pre-built high quality pattern database
-    const matchedPattern = PREBUILT_PATTERNS.find(p => 
-      p.kw.some(k => lowerPhrase.includes(k))
+    // 1. Check fixed expression dictionary first
+    if (EXPRESSIONS_DICTIONARY[lowerPhrase]) {
+      const exampleEn = EXPRESSIONS_DICTIONARY[lowerPhrase];
+      const translationVi = await this.translateToVietnamese(exampleEn);
+      return { example: exampleEn, translation: translationVi };
+    }
+
+    // 2. Determine best scenario templates based on user context or meaning tags
+    const combinedContext = `${contextText} ${meaningText}`.toLowerCase();
+    let matchedScenario = SCENARIO_GENERATORS.find(sc => 
+      sc.tags.some(tag => combinedContext.includes(tag))
     );
 
-    if (matchedPattern) {
-      return {
-        example: matchedPattern.en,
-        translation: matchedPattern.vi
-      };
+    if (!matchedScenario) {
+      // Default to workplace / project scenarios
+      matchedScenario = SCENARIO_GENERATORS[0];
     }
 
-    // 2. Generate natural English sentence structure based on phrase grammar
-    let exampleEn = '';
-    let translationVi = '';
-    const meaningVi = meaningText ? meaningText.trim() : 'thực hiện điều này';
+    // Select a random template for variety on multiple clicks
+    const templates = matchedScenario.templates;
+    const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+    
+    // Fit phrase into template
+    let generatedEn = selectedTemplate(cleanPhrase);
 
-    if (lowerPhrase.startsWith('how to') || lowerPhrase.startsWith('way to')) {
-      exampleEn = `Learning ${cleanPhrase} is very useful for daily communication.`;
-      translationVi = `Học ${meaningVi} rất hữu ích cho giao tiếp hàng ngày.`;
-    } else if (lowerPhrase.startsWith('a ') || lowerPhrase.startsWith('an ') || lowerPhrase.startsWith('the ')) {
-      exampleEn = `Understanding ${cleanPhrase} will help you speak English more naturally.`;
-      translationVi = `Hiểu rõ ${meaningVi} sẽ giúp bạn nói tiếng Anh tự nhiên hơn.`;
-    } else if (lowerPhrase.includes('with') || lowerPhrase.includes('for') || lowerPhrase.includes('to')) {
-      exampleEn = `We should ${cleanPhrase} to improve our team efficiency.`;
-      translationVi = `Chúng ta nên ${meaningVi} để nâng cao hiệu quả làm việc nhóm.`;
-    } else {
-      exampleEn = `It is important to ${cleanPhrase} when working in a modern environment.`;
-      translationVi = `Điều quan trọng là phải ${meaningVi} khi làm việc trong môi trường hiện đại.`;
+    // If phrase starts with capital letter or is an full sentence expression
+    if (cleanPhrase.match(/^[A-Z]/) && cleanPhrase.split(/\s+/).length > 3) {
+      generatedEn = cleanPhrase;
     }
 
-    // 3. Optional online translation API enhancement for custom sentence
-    try {
-      const apiRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(exampleEn)}&langpair=en|vi`);
-      const data = await apiRes.json();
-      if (data && data.responseData && data.responseData.translatedText) {
-        const onlineTranslation = data.responseData.translatedText.trim();
-        if (onlineTranslation && onlineTranslation.length > 5) {
-          translationVi = onlineTranslation;
-        }
-      }
-    } catch (err) {
-      console.warn('Online translation fallback unavailable, using local template:', err.message);
+    // Translate the generated natural sentence to Vietnamese via Google Translate GTX API
+    let generatedVi = await this.translateToVietnamese(generatedEn);
+
+    if (!generatedVi && meaningText) {
+      generatedVi = `Ví dụ sử dụng cụm từ "${cleanPhrase}" (${meaningText.trim()}).`;
     }
 
     return {
-      example: exampleEn,
-      translation: translationVi
+      example: generatedEn,
+      translation: generatedVi
     };
   }
 };

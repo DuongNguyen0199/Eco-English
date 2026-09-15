@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="26" fill="#FFFFFF" stroke="#18181B" stroke-width="9" />
+  <!-- Book Outline -->
+  <rect x="34" y="30" width="60" height="68" rx="5" fill="#FFFFFF" stroke="#18181B" stroke-width="8" />
+  <!-- Bookmark Ribbon -->
+  <path d="M 51 30 L 51 64 L 64 54 L 77 64 L 77 30 Z" fill="#FEF08A" stroke="#18181B" stroke-width="6" stroke-linejoin="round" />
+</svg>

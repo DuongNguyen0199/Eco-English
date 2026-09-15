@@ -15,36 +15,30 @@ Extension Chrome hỗ trợ học tiếng Anh thông minh với phương pháp *
 
 ---
 
-## 🛠️ Hướng Dẫn Cài Đặt Extension Trên Chrome
+## 🛠️ Hướng Dẫn Cài Đặt Cực Nhanh Trên Chrome (Trong 10 Giây)
 
-### 1. Dành cho người cài đặt từ Mã Nguồn GitHub
+Thư mục **`dist/`** đã được đóng gói sẵn trực tiếp trong repository này. Bạn hoặc bạn bè chỉ cần tải về và cài đặt ngay mà không cần dùng bất kỳ phần mềm kĩ thuật hay lệnh terminal nào!
+
+### 📌 Các bước cài đặt:
 
 1. **Tải mã nguồn về máy**:
-   ```bash
-   git clone https://github.com/DuongNguyen0199/Eco-English.git
-   cd Eco-English
-   ```
+   - Bấm nút xanh **`Code`** ở góc trên trang GitHub này ➔ chọn **`Download ZIP`**.
+   - Giải nén file `.zip` vừa tải ra một thư mục trên máy tính.
 
-2. **Cài đặt thư viện & Cài đóng gói sản phẩm**:
-   ```bash
-   npm install
-   npm run build
-   ```
-   *Lưu ý: Lệnh `npm run build` sẽ tạo ra thư mục `dist/` chứa mã nguồn đã đóng gói chuẩn cho Chrome Extension.*
-
-3. **Cài đặt vào trình duyệt Chrome**:
-   - Truy cập địa chỉ: `chrome://extensions`
-   - Bật công tắc **Chế độ dành cho nhà phát triển (Developer mode)** ở góc trên bên phải.
+2. **Cài đặt vào trình duyệt Chrome**:
+   - Mở trình duyệt Chrome và truy cập địa chỉ: `chrome://extensions`
+   - Gạt bật công tắc **Chế độ dành cho nhà phát triển (Developer mode)** ở góc trên bên phải.
    - Bấm nút **Tải tiện ích đã giải nén (Load unpacked)**.
-   - Chọn đường dẫn trỏ đến thư mục **`dist`** bên trong dự án vừa build.
-   - Hoàn tất! Extension **Eco English** với biểu tượng cuốn sách sẽ xuất hiện sẵn sàng sử dụng.
+   - Chọn đường dẫn trỏ thẳng đến thư mục **`dist`** nằm bên trong thư mục vừa giải nén.
+   - **Hoàn tất!** Extension **Eco English** với biểu tượng cuốn sách xinh xắn sẽ xuất hiện sẵn sàng sử dụng.
 
 ---
 
-### 2. Dành cho Người Dùng Bình Thường (Không dùng Terminal / Node.js)
+### 💻 Dành cho Lập trình viên (Muốn tự tùy biến & Build lại)
 
-Nếu bạn muốn chia sẻ cho bạn bè cài đặt nhanh mà họ không biết dùng Node.js / Git:
-1. Bạn nén thư mục **`dist`** (sau khi build xong) thành file `Eco-English-Extension.zip`.
-2. Gửi file `Eco-English-Extension.zip` cho bạn bè qua Zalo / Google Drive / Email.
-3. Bạn bè giải nén file `.zip` đó ra một thư mục trên máy tính.
-4. Mở `chrome://extensions` trên Chrome, bật **Developer mode**, chọn **Load unpacked (Tải tiện ích đã giải nén)** và trỏ trực tiếp đến thư mục vừa giải nén là cài thành công 100%!
+```bash
+git clone https://github.com/DuongNguyen0199/Eco-English.git
+cd Eco-English
+npm install
+npm run build
+```

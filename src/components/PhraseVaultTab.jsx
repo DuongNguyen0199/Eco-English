@@ -275,11 +275,25 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                 onChange={handlePhraseTypeChange}
                 className="w-full px-2 py-1.5 text-xs rounded-lg border-[1.5px] border-slate-900 font-bold focus:outline-none focus:bg-[#FFFDF0]"
               >
-                <option value="Collocation">Collocation</option>
-                <option value="Phrasal Verb">Phrasal Verb</option>
-                <option value="Idiom">Idiom</option>
-                <option value="Academic Phrase">Academic Phrase</option>
+                <option value="Collocation">🔗 Collocation (Cụm từ ghép cố định)</option>
+                <option value="Phrasal Verb">🏃 Phrasal Verb (Cụm động từ + giới từ)</option>
+                <option value="Idiom">💡 Idiom (Thành ngữ / Khẩu ngữ)</option>
+                <option value="Academic Phrase">🎓 Academic Phrase (Cụm từ học thuật / IELTS)</option>
+                <option value="Prepositional Phrase">📜 Prepositional Phrase (Cụm giới từ)</option>
               </select>
+            </div>
+          </div>
+
+          {/* Quick Guide Box for Phrase Types */}
+          <div className="bg-[#FFFDF0] p-2 rounded-lg border border-slate-900 text-[10px] space-y-1 font-semibold text-slate-800">
+            <p className="font-extrabold text-slate-900 text-[10.5px] flex items-center gap-1 border-b border-slate-300 pb-0.5">
+              <span>💡 Cách phân biệt "Loại cụm từ":</span>
+            </p>
+            <div className="space-y-0.5 text-[9.5px] leading-tight">
+              <p>• <strong>🔗 Collocation:</strong> Các từ hay đi cặp với nhau (VD: <em>make a decision</em>, <em>take into account</em>).</p>
+              <p>• <strong>🏃 Phrasal Verb:</strong> Động từ đi kèm giới từ (VD: <em>come up with</em>, <em>look forward to</em>, <em>run out of</em>).</p>
+              <p>• <strong>💡 Idiom:</strong> Thành ngữ / Khẩu ngữ giao tiếp (VD: <em>having second thoughts</em>, <em>a double-edged sword</em>).</p>
+              <p>• <strong>🎓 Academic Phrase:</strong> Cụm từ học thuật bài viết/thuyết trình (VD: <em>shed light on</em>, <em>stem from</em>).</p>
             </div>
           </div>
 
@@ -710,10 +724,11 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                     onChange={e => setEditingPhrase({ ...editingPhrase, type: e.target.value })}
                     className="w-full px-2 py-1.5 text-xs rounded-lg border-[1.5px] border-slate-900 font-bold focus:outline-none focus:bg-[#FFFDF0]"
                   >
-                    <option value="Collocation">Collocation</option>
-                    <option value="Phrasal Verb">Phrasal Verb</option>
-                    <option value="Idiom">Idiom</option>
-                    <option value="Academic Phrase">Academic Phrase</option>
+                    <option value="Collocation">🔗 Collocation (Cụm từ ghép cố định)</option>
+                    <option value="Phrasal Verb">🏃 Phrasal Verb (Cụm động từ + giới từ)</option>
+                    <option value="Idiom">💡 Idiom (Thành ngữ / Khẩu ngữ)</option>
+                    <option value="Academic Phrase">🎓 Academic Phrase (Cụm từ học thuật / IELTS)</option>
+                    <option value="Prepositional Phrase">📜 Prepositional Phrase (Cụm giới từ)</option>
                   </select>
                 </div>
               </div>

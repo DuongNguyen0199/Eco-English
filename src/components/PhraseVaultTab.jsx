@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CEFR_LEVELS, autoClassifyCEFR, autoGeneratePhonetic } from '../data/cefrData';
 import { speechService } from '../services/speechService';
+import { aiService } from '../services/aiService';
 import { Plus, Search, Volume2, Trash2, Tag, BookMarked, Layers, Shuffle, Sparkles, Target, Pencil, X, Check, Wand2 } from 'lucide-react';
 
 export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, onEditPhrase, onUpdateMastery }) {
@@ -16,6 +17,32 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
 
   // Edit Phrase Modal State
   const [editingPhrase, setEditingPhrase] = useState(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  const handleAutoGenerateExample = async (targetPhrase, targetMeaning, isEditMode = false) => {
+    if (!targetPhrase || !targetPhrase.trim()) return;
+    setIsGeneratingAI(true);
+    try {
+      const { example, translation } = await aiService.generateExampleAndTranslation(targetPhrase, targetMeaning);
+      if (isEditMode) {
+        setEditingPhrase(prev => prev ? ({
+          ...prev,
+          example: example || prev.example,
+          vietnameseTranslation: translation || prev.vietnameseTranslation
+        }) : null);
+      } else {
+        setNewPhrase(prev => ({
+          ...prev,
+          example: example || prev.example,
+          vietnameseTranslation: translation || prev.vietnameseTranslation
+        }));
+      }
+    } catch (err) {
+      console.error("AI Example generation error:", err);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   // New Phrase Form State
   const [newPhrase, setNewPhrase] = useState({
@@ -310,10 +337,24 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
           </div>
 
           <div>
-            <label className="block text-[11px] font-black text-slate-900 mb-0.5">Ví dụ minh họa (Tiếng Anh)</label>
+            <label className="block text-[11px] font-black text-slate-900 mb-0.5 flex items-center justify-between">
+              <span>Ví dụ minh họa (Tiếng Anh)</span>
+              {newPhrase.phrase && (
+                <button
+                  type="button"
+                  onClick={() => handleAutoGenerateExample(newPhrase.phrase, newPhrase.meaning, false)}
+                  disabled={isGeneratingAI}
+                  className="text-[9px] font-extrabold text-indigo-950 bg-indigo-100 border border-indigo-400 px-1.5 py-0.2 rounded flex items-center gap-1 hover:bg-indigo-200 transition-all disabled:opacity-60"
+                  title="Nhờ AI tự động tạo 1 câu ví dụ tiếng Anh đơn giản và dịch tiếng Việt"
+                >
+                  <Sparkles className={`w-2.5 h-2.5 text-indigo-700 ${isGeneratingAI ? 'animate-spin' : ''}`} />
+                  {isGeneratingAI ? 'Đang gen AI...' : '🪄 AI Gen Ví Dụ & Dịch'}
+                </button>
+              )}
+            </label>
             <textarea
               rows={2}
-              placeholder="She came up with a great solution."
+              placeholder="e.g. She came up with a great solution."
               value={newPhrase.example}
               onChange={e => setNewPhrase({ ...newPhrase, example: e.target.value })}
               className="w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] border-slate-900 font-bold focus:outline-none focus:bg-[#FFFDF0]"
@@ -745,7 +786,21 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-slate-900 mb-0.5">Ví dụ minh họa (Tiếng Anh)</label>
+                <label className="block text-[11px] font-black text-slate-900 mb-0.5 flex items-center justify-between">
+                  <span>Ví dụ minh họa (Tiếng Anh)</span>
+                  {editingPhrase.phrase && (
+                    <button
+                      type="button"
+                      onClick={() => handleAutoGenerateExample(editingPhrase.phrase, editingPhrase.meaning, true)}
+                      disabled={isGeneratingAI}
+                      className="text-[9px] font-extrabold text-indigo-950 bg-indigo-100 border border-indigo-400 px-1.5 py-0.2 rounded flex items-center gap-1 hover:bg-indigo-200 transition-all disabled:opacity-60"
+                      title="Nhờ AI tự động tạo 1 câu ví dụ tiếng Anh đơn giản và dịch tiếng Việt"
+                    >
+                      <Sparkles className={`w-2.5 h-2.5 text-indigo-700 ${isGeneratingAI ? 'animate-spin' : ''}`} />
+                      {isGeneratingAI ? 'Đang gen AI...' : '🪄 AI Gen Ví Dụ & Dịch'}
+                    </button>
+                  )}
+                </label>
                 <textarea
                   rows={2}
                   value={editingPhrase.example}

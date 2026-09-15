@@ -90,9 +90,93 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
     }
   ];
 
+  // Comprehensive Verb Conjugation Dictionary for Flex Matching
+  const VERB_FORMS = {
+    pave: ['pave', 'paved', 'paves', 'paving'],
+    come: ['come', 'came', 'comes', 'coming'],
+    bear: ['bear', 'bore', 'borne', 'bearing', 'bears'],
+    call: ['call', 'called', 'calling', 'calls'],
+    have: ['have', 'has', 'had', 'having'],
+    make: ['make', 'made', 'makes', 'making'],
+    run: ['run', 'ran', 'running', 'runs'],
+    look: ['look', 'looked', 'looking', 'looks'],
+    take: ['take', 'took', 'taken', 'taking', 'takes'],
+    shed: ['shed', 'sheds', 'shedding'],
+    strike: ['strike', 'struck', 'striking', 'strikes'],
+    stem: ['stem', 'stemmed', 'stemming', 'stems'],
+    wreak: ['wreak', 'wreaked', 'wreaking', 'wreaks'],
+    cut: ['cut', 'cuts', 'cutting'],
+    play: ['play', 'played', 'playing', 'plays'],
+    keep: ['keep', 'kept', 'keeping', 'keeps'],
+    bring: ['bring', 'brought', 'bringing', 'brings'],
+    give: ['give', 'gave', 'given', 'giving', 'gives'],
+    get: ['get', 'got', 'gotten', 'getting', 'gets'],
+    go: ['go', 'went', 'gone', 'going', 'goes'],
+    set: ['set', 'sets', 'setting'],
+    put: ['put', 'puts', 'putting'],
+    turn: ['turn', 'turned', 'turning', 'turns'],
+    break: ['break', 'broke', 'broken', 'breaking', 'breaks'],
+    catch: ['catch', 'caught', 'catching', 'catches']
+  };
+
   const escapeRegExp = (str) => {
     if (!str || typeof str !== 'string') return '';
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+
+  // Smart mask generator: replaces exact or conjugated verb forms of target phrase with '________'
+  const maskPhraseInSentence = (sentence, phraseText) => {
+    if (!sentence || !phraseText) return { masked: null, matchedText: phraseText };
+    const cleanPhrase = phraseText.trim();
+    const safePhrase = escapeRegExp(cleanPhrase);
+
+    // 1. Direct exact case-insensitive match
+    const exactRegex = new RegExp(`\\b${safePhrase}\\b`, 'gi');
+    if (exactRegex.test(sentence)) {
+      return {
+        masked: sentence.replace(exactRegex, '________'),
+        matchedText: cleanPhrase
+      };
+    }
+
+    // 2. Conjugated verb flex matching
+    const words = cleanPhrase.split(/\s+/);
+    const firstWordClean = words[0].toLowerCase().replace(/[^a-z']/g, '');
+    const restOfPhrase = words.slice(1).join('\\s+');
+
+    const forms = VERB_FORMS[firstWordClean] || [
+      firstWordClean,
+      firstWordClean + 'd',
+      firstWordClean + 'ed',
+      firstWordClean + 's',
+      firstWordClean + 'ing'
+    ];
+
+    const verbPattern = `(${forms.map(escapeRegExp).join('|')})`;
+    const fullPattern = restOfPhrase ? `\\b${verbPattern}\\s+${escapeRegExp(restOfPhrase)}\\b` : `\\b${verbPattern}\\b`;
+    const flexRegex = new RegExp(fullPattern, 'gi');
+
+    const match = sentence.match(flexRegex);
+    if (match && match.length > 0) {
+      return {
+        masked: sentence.replace(flexRegex, '________'),
+        matchedText: match[0]
+      };
+    }
+
+    // 3. Fallback: try matching last 2 key words of the phrase if multi-word
+    if (words.length > 1) {
+      const mainPart = words.slice(-2).join('\\s+');
+      const subRegex = new RegExp(`\\b${escapeRegExp(mainPart)}\\b`, 'gi');
+      if (subRegex.test(sentence)) {
+        return {
+          masked: sentence.replace(subRegex, '________'),
+          matchedText: phraseText
+        };
+      }
+    }
+
+    return { masked: null, matchedText: phraseText };
   };
 
   const generateQuestion = (typeToUse = exerciseType) => {
@@ -135,6 +219,7 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
         const wrongChoices = phrases
           .filter(p => p.id !== target.id)
           .map(p => p.meaning)
+          .filter(Boolean)
           .sort(() => 0.5 - Math.random())
           .slice(0, 3);
         
@@ -142,19 +227,33 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
 
         setCurrentQuestion({
           target,
-          questionText: `Nghĩa đúng của cụm từ "${target.phrase}" là gì?`,
+          questionText: `Nghĩa chuẩn của cụm từ "${target.phrase}" là gì?`,
           options,
           correctAnswer: target.meaning,
-          explanation: `Cụm từ "${target.phrase}" nghĩa là: ${target.meaning}`
+          explanation: `Cụm từ "${target.phrase}" (${target.level || 'B1'}) có nghĩa là: ${target.meaning}`
         });
       } else if (typeToUse === 'cloze') {
-        const sentence = target.example || `She decided to ${target.phrase} during the project.`;
-        const safePhrase = escapeRegExp(target.phrase);
-        const hiddenSentence = sentence.replace(new RegExp(safePhrase, 'gi'), '________');
+        let questionSentence = '';
+        let matchedVerbForm = target.phrase;
+
+        // Try smart phrase masking in target example
+        let maskedResult = null;
+        if (target.example) {
+          maskedResult = maskPhraseInSentence(target.example, target.phrase);
+        }
+
+        if (maskedResult && maskedResult.masked) {
+          questionSentence = maskedResult.masked;
+          matchedVerbForm = maskedResult.matchedText || target.phrase;
+        } else {
+          // Smart contextual fallback for spoken phrases / custom idioms without example
+          questionSentence = `Điền cụm từ phù hợp với ngữ cảnh: "${target.context || target.meaning}" ➔ ________`;
+        }
 
         const wrongPhrases = phrases
-          .filter(p => p.id !== target.id)
+          .filter(p => p.id !== target.id && p.phrase !== target.phrase)
           .map(p => p.phrase)
+          .filter(Boolean)
           .sort(() => 0.5 - Math.random())
           .slice(0, 3);
 
@@ -162,10 +261,10 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
 
         setCurrentQuestion({
           target,
-          questionText: hiddenSentence,
+          questionText: questionSentence,
           options,
           correctAnswer: target.phrase,
-          explanation: `Cụm từ phù hợp điền vào ngữ cảnh là "${target.phrase}".`
+          explanation: `Cụm từ đúng cần điền là "${target.phrase}" (${target.meaning}). ${target.example ? `Ví dụ: "${target.example}"` : ''}`
         });
       } else if (typeToUse === 'unscramble') {
         const sentence = target.example || `We must keep in mind that safety comes first.`;
@@ -328,8 +427,15 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-black px-2 py-0.5 bg-[#FFFDF0] border border-slate-900 text-slate-900 rounded uppercase flex items-center gap-1 flex-wrap">
             {exerciseType === 'tense' && <Clock className="w-3 h-3 text-indigo-700" />}
-            {exerciseType === 'tense' ? 'Luyện Chia Thì Giao Tiếp' : `Cụm từ: ${currentQuestion.target?.phrase || ''}`} ({currentQuestion.target?.level || 'B1'})
-            {exerciseType !== 'tense' && currentQuestion.target?.phonetic && (
+            {exerciseType === 'tense' 
+              ? `⏱️ Luyện Chia Thì Giao Tiếp (${currentQuestion.target?.level || 'B1'})`
+              : exerciseType === 'cloze'
+              ? `🎯 Thử Thách Điền Câu (${currentQuestion.target?.level || 'B1'})`
+              : exerciseType === 'unscramble'
+              ? `🧩 Sắp Xếp Câu (${currentQuestion.target?.level || 'B1'})`
+              : `📚 Cụm từ: ${currentQuestion.target?.phrase || ''} (${currentQuestion.target?.level || 'B1'})`
+            }
+            {exerciseType === 'meaning' && currentQuestion.target?.phonetic && (
               <span className="text-[9px] font-bold text-amber-900 bg-amber-100 px-1 py-0.2 rounded border border-amber-300 normal-case shrink-0">
                 🗣️ {currentQuestion.target.phonetic}
               </span>

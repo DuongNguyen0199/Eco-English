@@ -130,9 +130,17 @@ export const storageService = {
 
   async addPhrase(newPhrase) {
     const phrases = await this.getPhrases();
+    const cleanNew = (newPhrase.phrase || '').trim().toLowerCase();
+
+    // Prevent adding duplicate phrase (case-insensitive)
+    if (cleanNew && phrases.some(p => p.phrase && p.phrase.trim().toLowerCase() === cleanNew)) {
+      console.warn(`Phrase "${newPhrase.phrase}" already exists in storage. Duplicate prevented.`);
+      return phrases;
+    }
+
     const phraseObj = {
       id: `custom-${Date.now()}`,
-      phrase: newPhrase.phrase,
+      phrase: newPhrase.phrase.trim(),
       phonetic: newPhrase.phonetic || '',
       meaning: newPhrase.meaning,
       context: newPhrase.context || 'Giao tiếp hàng ngày',

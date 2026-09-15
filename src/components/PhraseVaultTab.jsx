@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CEFR_LEVELS, autoClassifyCEFR, autoGeneratePhonetic } from '../data/cefrData';
 import { speechService } from '../services/speechService';
 import { aiService } from '../services/aiService';
-import { Plus, Search, Volume2, Trash2, Tag, BookMarked, Layers, Shuffle, Sparkles, Target, Pencil, X, Check, Wand2 } from 'lucide-react';
+import { Plus, Search, Volume2, Trash2, Tag, BookMarked, Layers, Shuffle, Sparkles, Target, Pencil, X, Check, Wand2, AlertCircle } from 'lucide-react';
 
 export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, onEditPhrase, onUpdateMastery }) {
   const [activeSubTab, setActiveSubTab] = useState('flashcard'); // Default: SRS Flashcard Mode
@@ -18,6 +18,8 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
   // Edit Phrase Modal State
   const [editingPhrase, setEditingPhrase] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [duplicateError, setDuplicateError] = useState('');
+  const [editDuplicateError, setEditDuplicateError] = useState('');
 
   const handleAutoGenerateExample = async (targetPhrase, targetMeaning, targetContext = '', isEditMode = false) => {
     if (!targetPhrase || !targetPhrase.trim()) return;
@@ -102,6 +104,13 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
     setAutoLevelDetected(suggestedLevel);
     setAutoPhoneticDetected(suggestedPhonetic);
 
+    const cleanText = text.trim().toLowerCase();
+    if (cleanText && phrases.some(p => p.phrase && p.phrase.trim().toLowerCase() === cleanText)) {
+      setDuplicateError(`Cụm từ "${text.trim()}" đã tồn tại trong thư viện!`);
+    } else {
+      setDuplicateError('');
+    }
+
     setNewPhrase(prev => ({
       ...prev,
       phrase: text,
@@ -125,6 +134,12 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
     e.preventDefault();
     if (!newPhrase.phrase.trim() || !newPhrase.meaning.trim()) return;
 
+    const cleanText = newPhrase.phrase.trim().toLowerCase();
+    if (phrases.some(p => p.phrase && p.phrase.trim().toLowerCase() === cleanText)) {
+      setDuplicateError(`Cụm từ "${newPhrase.phrase.trim()}" đã tồn tại trong thư viện!`);
+      return;
+    }
+
     onAddPhrase({
       ...newPhrase,
       tags: newPhrase.tags ? newPhrase.tags.split(',').map(t => t.trim()) : ['Custom']
@@ -141,10 +156,12 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
       vietnameseTranslation: '',
       tags: ''
     });
+    setDuplicateError('');
     setActiveSubTab('flashcard');
   };
 
   const handleOpenEdit = (item) => {
+    setEditDuplicateError('');
     setEditingPhrase({
       id: item.id,
       phrase: item.phrase || '',
@@ -159,9 +176,25 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
     });
   };
 
+  const handleEditPhraseTextChange = (text) => {
+    const cleanText = text.trim().toLowerCase();
+    if (cleanText && editingPhrase && phrases.some(p => p.id !== editingPhrase.id && p.phrase && p.phrase.trim().toLowerCase() === cleanText)) {
+      setEditDuplicateError(`Cụm từ "${text.trim()}" đã trùng với một cụm từ khác trong thư viện!`);
+    } else {
+      setEditDuplicateError('');
+    }
+    setEditingPhrase(prev => prev ? { ...prev, phrase: text } : null);
+  };
+
   const handleSaveEditSubmit = (e) => {
     e.preventDefault();
     if (!editingPhrase || !editingPhrase.phrase.trim() || !editingPhrase.meaning.trim()) return;
+
+    const cleanText = editingPhrase.phrase.trim().toLowerCase();
+    if (phrases.some(p => p.id !== editingPhrase.id && p.phrase && p.phrase.trim().toLowerCase() === cleanText)) {
+      setEditDuplicateError(`Cụm từ "${editingPhrase.phrase.trim()}" đã trùng với một cụm từ khác trong thư viện!`);
+      return;
+    }
 
     onEditPhrase && onEditPhrase(editingPhrase.id, {
       ...editingPhrase,
@@ -171,6 +204,7 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
     });
 
     setEditingPhrase(null);
+    setEditDuplicateError('');
   };
 
   const currentCards = shuffledPhrases.length > 0 ? shuffledPhrases : targetFlashcardPool;
@@ -237,8 +271,16 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
               placeholder="e.g. come up with, double-edged sword"
               value={newPhrase.phrase}
               onChange={handlePhraseTextChange}
-              className="w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] border-slate-900 font-bold focus:outline-none focus:bg-[#FFFDF0]"
+              className={`w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] font-bold focus:outline-none focus:bg-[#FFFDF0] ${
+                duplicateError ? 'border-rose-500 bg-rose-50' : 'border-slate-900'
+              }`}
             />
+            {duplicateError && (
+              <div className="flex items-center gap-1.5 p-2 bg-rose-100 border border-rose-500 text-rose-900 text-[11px] font-extrabold rounded-lg mt-1 shadow-[1px_1px_0px_0px_#18181B]">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{duplicateError}</span>
+              </div>
+            )}
           </div>
 
           <div>
@@ -705,9 +747,17 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                   type="text"
                   required
                   value={editingPhrase.phrase}
-                  onChange={e => setEditingPhrase({ ...editingPhrase, phrase: e.target.value })}
-                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] border-slate-900 font-bold focus:outline-none focus:bg-[#FFFDF0]"
+                  onChange={e => handleEditPhraseTextChange(e.target.value)}
+                  className={`w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] font-bold focus:outline-none focus:bg-[#FFFDF0] ${
+                    editDuplicateError ? 'border-rose-500 bg-rose-50' : 'border-slate-900'
+                  }`}
                 />
+                {editDuplicateError && (
+                  <div className="flex items-center gap-1.5 p-2 bg-rose-100 border border-rose-500 text-rose-900 text-[11px] font-extrabold rounded-lg mt-1 shadow-[1px_1px_0px_0px_#18181B]">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    <span>{editDuplicateError}</span>
+                  </div>
+                )}
               </div>
 
               <div>

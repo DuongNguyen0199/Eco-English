@@ -17,12 +17,16 @@ export default function App() {
       const { phrases: storedPhrases, level, streak: storedStreak, xp: storedXP } = await storageService.initData();
       setPhrases(storedPhrases);
       setUserLevel(level);
-      setStreak(storedStreak);
+
+      // Auto check & increment streak on new day launch!
+      const activeStreak = await storageService.updateStreak();
+      setStreak(activeStreak);
+
       setXp(storedXP || 0);
       setLoading(false);
 
       // Initial Sync to Supabase Cloud
-      supabaseService.syncUserProgress({ xp: storedXP || 0, streak: storedStreak, userLevel: level });
+      supabaseService.syncUserProgress({ xp: storedXP || 0, streak: activeStreak, userLevel: level });
       supabaseService.syncPhrasesVault(storedPhrases);
     }
     loadData();
@@ -59,6 +63,8 @@ export default function App() {
   const handleUpdateMastery = async (phraseId, isCorrect) => {
     const updated = await storageService.updatePhraseMastery(phraseId, isCorrect);
     setPhrases(updated);
+    const activeStreak = await storageService.updateStreak();
+    setStreak(activeStreak);
   };
 
   const handleFinishLesson = async () => {
@@ -69,6 +75,8 @@ export default function App() {
   const handleAddXP = async (amount = 10) => {
     const newXP = await storageService.addXP(amount);
     setXp(newXP);
+    const activeStreak = await storageService.updateStreak();
+    setStreak(activeStreak);
   };
 
   const handleResetData = async () => {

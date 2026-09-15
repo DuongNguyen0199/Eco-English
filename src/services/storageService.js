@@ -197,14 +197,18 @@ export const storageService = {
     return updated;
   },
 
-  // Streak & Progress Tracking (Tích lũy ngày học - Không reset/trừ)
+  // Streak & Progress Tracking (Tích lũy ngày học - Tự động cộng +1 ngày mới)
   async updateStreak() {
     const todayStr = new Date().toDateString();
-    const lastDate = await this.get(STORAGE_KEYS.LAST_LESSON_DATE, '');
+    const lastDate = await this.get(STORAGE_KEYS.LAST_LESSON_DATE, null);
     let streak = await this.get(STORAGE_KEYS.STREAK, 1);
 
-    // Nếu là ngày mới chưa ghi nhận ➔ Cộng +1 ngày học tích lũy
-    if (lastDate !== todayStr) {
+    if (!lastDate) {
+      // First day installing / initializing app
+      await this.set(STORAGE_KEYS.LAST_LESSON_DATE, todayStr);
+      await this.set(STORAGE_KEYS.STREAK, streak);
+    } else if (lastDate !== todayStr) {
+      // New active day -> Automatically increment streak by +1 day!
       streak += 1;
       await this.set(STORAGE_KEYS.STREAK, streak);
       await this.set(STORAGE_KEYS.LAST_LESSON_DATE, todayStr);

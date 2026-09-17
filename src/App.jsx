@@ -15,19 +15,23 @@ export default function App() {
   useEffect(() => {
     async function loadData() {
       const { phrases: storedPhrases, level, streak: storedStreak, xp: storedXP } = await storageService.initData();
-      setPhrases(storedPhrases);
       setUserLevel(level);
 
       // Auto check & increment streak on new day launch!
       const activeStreak = await storageService.updateStreak();
       setStreak(activeStreak);
-
       setXp(storedXP || 0);
+
+      // Auto fetch & merge community shared phrases on launch!
+      const commPhrases = await supabaseService.fetchCommunityPhrases();
+      const { phrases: finalPhrases } = await storageService.mergeCommunityPhrases(commPhrases);
+      setPhrases(finalPhrases);
+
       setLoading(false);
 
       // Initial Sync to Supabase Cloud
       supabaseService.syncUserProgress({ xp: storedXP || 0, streak: activeStreak, userLevel: level });
-      supabaseService.syncPhrasesVault(storedPhrases);
+      supabaseService.syncPhrasesVault(finalPhrases);
     }
     loadData();
   }, []);
@@ -39,6 +43,15 @@ export default function App() {
       supabaseService.syncPhrasesVault(phrases);
     }
   }, [xp, streak, userLevel, phrases, loading]);
+
+  const handleSyncCommunity = async () => {
+    const commPhrases = await supabaseService.fetchCommunityPhrases();
+    const { mergedCount, phrases: updated } = await storageService.mergeCommunityPhrases(commPhrases);
+    if (mergedCount > 0) {
+      setPhrases(updated);
+    }
+    return { mergedCount, phrases: updated };
+  };
 
   const handleLevelChange = async (newLevel) => {
     setUserLevel(newLevel);
@@ -109,6 +122,7 @@ export default function App() {
       onUpdateMastery={handleUpdateMastery}
       onFinishLesson={handleFinishLesson}
       onResetData={handleResetData}
+      onSyncCommunity={handleSyncCommunity}
     />
   );
 }

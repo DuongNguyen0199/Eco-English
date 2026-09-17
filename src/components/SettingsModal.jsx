@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { CEFR_LEVELS, LEVEL_DESCRIPTIONS } from '../data/cefrData';
 import { supabaseService } from '../services/supabaseService';
-import { Settings, RefreshCcw, Download, X, Target, User, Sparkles, AlertCircle, CheckCircle2, Copy, Check } from 'lucide-react';
+import { storageService } from '../services/storageService';
+import { Settings, RefreshCcw, Download, X, Target, User, Sparkles, AlertCircle, CheckCircle2, Copy, Check, Users } from 'lucide-react';
 
 const AVATAR_OPTIONS = ['🎓', '🦊', '⚡', '👑', '🔥', '🚀', '🦉', '⭐', '🐯', '💎'];
 
-export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChange, phrases, onResetData, xp = 0, streak = 1 }) {
+export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChange, phrases, onResetData, xp = 0, streak = 1, onSyncCommunity }) {
   const [nickname, setNickname] = useState('Học Viên Eco');
   const [selectedAvatar, setSelectedAvatar] = useState('🎓');
+  const [learnSpace, setLearnSpace] = useState('PUBLIC');
   const [userId, setUserId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -30,6 +32,9 @@ export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChang
     const { nickname: savedName, avatar: savedAvatar } = await supabaseService.getUserProfile();
     setNickname(savedName);
     setSelectedAvatar(savedAvatar);
+
+    const space = await storageService.getLearnSpace();
+    setLearnSpace(space || 'PUBLIC');
   }
 
   const handleSaveProfile = async (e) => {
@@ -54,12 +59,20 @@ export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChang
       return;
     }
 
-    // Save profile locally & sync to Cloud
+    // Save profile & Learn Space locally and sync to Cloud
     await supabaseService.setUserProfile(cleanName, selectedAvatar);
+    const cleanSpace = await storageService.setLearnSpace(learnSpace);
+    setLearnSpace(cleanSpace);
+
     await supabaseService.syncUserProgress({ xp, streak, userLevel });
+    await supabaseService.syncPhrasesVault(phrases);
+
+    if (onSyncCommunity) {
+      await onSyncCommunity();
+    }
 
     setIsSaving(false);
-    setSuccessMsg('✅ Cập nhật Tên hiển thị thành công!');
+    setSuccessMsg('✅ Cập nhật Hồ sơ & Không gian học tập thành công!');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
@@ -138,6 +151,28 @@ export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChang
                 {av}
               </button>
             ))}
+          </div>
+
+          {/* Learn Space (Group / Community Code) Field */}
+          <div className="pt-1 space-y-1 border-t border-slate-200">
+            <label className="block text-xs font-black text-slate-900 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-indigo-600" /> Mã Không Gian Học Tập (Learn Space)
+              </span>
+              <span className="text-[9px] font-bold text-indigo-900 bg-indigo-100 border border-indigo-300 px-1.5 py-0.2 rounded">
+                Dùng chung cụm từ nhóm
+              </span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. ECO2026, LOP_B1 (Mặc định: PUBLIC)"
+              value={learnSpace}
+              onChange={(e) => setLearnSpace(e.target.value.toUpperCase())}
+              className="w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] border-slate-900 font-extrabold uppercase tracking-wider focus:outline-none focus:bg-[#FFFDF0]"
+            />
+            <p className="text-[9.5px] text-slate-600 font-semibold leading-tight">
+              💡 <strong>Mẹo:</strong> Nhập cùng mã với bạn bè (VD: <em>ECO2026</em>) để dùng chung cụm từ nhóm. Để <em>PUBLIC</em> để dùng chung với toàn bộ cộng đồng!
+            </p>
           </div>
 
           {/* Auto-generated User ID Display Box */}

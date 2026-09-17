@@ -7,7 +7,8 @@ const STORAGE_KEYS = {
   LAST_LESSON_DATE: 'eco_eng_last_lesson_date',
   COMPLETED_LESSONS: 'eco_eng_completed_lessons',
   STATS: 'eco_eng_stats',
-  XP: 'eco_eng_xp'
+  XP: 'eco_eng_xp',
+  LEARN_SPACE: 'eco_eng_learn_space'
 };
 
 /**
@@ -230,5 +231,79 @@ export const storageService = {
     const updated = current + amount;
     await this.set(STORAGE_KEYS.XP, updated);
     return updated;
+  },
+
+  // Learn Space (Shared Group Code) Management
+  async getLearnSpace() {
+    const space = await this.get(STORAGE_KEYS.LEARN_SPACE, 'PUBLIC');
+    return (space || 'PUBLIC').trim().toUpperCase();
+  },
+
+  async setLearnSpace(spaceCode) {
+    const cleanCode = (spaceCode || 'PUBLIC').trim().toUpperCase() || 'PUBLIC';
+    await this.set(STORAGE_KEYS.LEARN_SPACE, cleanCode);
+    return cleanCode;
+  },
+
+  // Merge Shared Community / Group Phrases into Local Storage
+  async mergeCommunityPhrases(communityPhrases = []) {
+    if (!Array.isArray(communityPhrases) || communityPhrases.length === 0) {
+      const localPhrases = await this.getPhrases();
+      return { mergedCount: 0, phrases: localPhrases };
+    }
+
+    const localPhrases = await this.getPhrases();
+    let mergedCount = 0;
+    const updatedPhrases = [...localPhrases];
+
+    for (const cp of communityPhrases) {
+      if (!cp || !cp.phrase) continue;
+      const cleanPhrase = cp.phrase.trim().toLowerCase();
+
+      const existingIndex = updatedPhrases.findIndex(p => p.phrase && p.phrase.trim().toLowerCase() === cleanPhrase);
+      if (existingIndex >= 0) {
+        // Update author and space metadata if missing locally
+        const existing = { ...updatedPhrases[existingIndex] };
+        let changed = false;
+        if (!existing.authorName && cp.authorName) {
+          existing.authorName = cp.authorName;
+          existing.authorAvatar = cp.authorAvatar || '🎓';
+          changed = true;
+        }
+        if (!existing.spaceCode && cp.spaceCode) {
+          existing.spaceCode = cp.spaceCode;
+          changed = true;
+        }
+        if (changed) {
+          updatedPhrases[existingIndex] = existing;
+        }
+      } else {
+        // Add new phrase from community / shared space
+        updatedPhrases.push({
+          id: cp.id || `comm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          phrase: cp.phrase.trim(),
+          phonetic: cp.phonetic || '',
+          meaning: cp.meaning || '',
+          context: cp.context || 'Chia sẻ từ Cộng đồng',
+          level: cp.level || 'B1',
+          type: cp.type || 'Collocation',
+          example: cp.example || '',
+          vietnameseTranslation: cp.vietnameseTranslation || '',
+          tags: Array.isArray(cp.tags) ? cp.tags : ['Shared'],
+          masteryLevel: 0,
+          nextReviewDate: new Date().toISOString(),
+          authorName: cp.authorName || 'Học Viên Eco',
+          authorAvatar: cp.authorAvatar || '🎓',
+          spaceCode: cp.spaceCode || 'PUBLIC'
+        });
+        mergedCount++;
+      }
+    }
+
+    if (mergedCount > 0) {
+      await this.set(STORAGE_KEYS.PHRASES, updatedPhrases);
+    }
+
+    return { mergedCount, phrases: updatedPhrases };
   }
 };

@@ -2,12 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { CEFR_LEVELS, autoClassifyCEFR, autoGeneratePhonetic } from '../data/cefrData';
 import { speechService } from '../services/speechService';
 import { aiService } from '../services/aiService';
-import { Plus, Search, Volume2, Trash2, Tag, BookMarked, Layers, Shuffle, Sparkles, Target, Pencil, X, Check, Wand2, AlertCircle } from 'lucide-react';
+import { Plus, Search, Volume2, Trash2, Tag, BookMarked, Layers, Shuffle, Sparkles, Target, Pencil, X, Check, Wand2, AlertCircle, Globe, RefreshCw } from 'lucide-react';
 
-export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, onEditPhrase, onUpdateMastery }) {
+export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, onEditPhrase, onUpdateMastery, onSyncCommunity }) {
   const [activeSubTab, setActiveSubTab] = useState('flashcard'); // Default: SRS Flashcard Mode
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState('ALL');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
+
+  const handleSyncClick = async () => {
+    if (!onSyncCommunity) return;
+    setIsSyncing(true);
+    setSyncMsg('');
+    try {
+      const res = await onSyncCommunity();
+      if (res && res.mergedCount > 0) {
+        setSyncMsg(`🎉 Đã đồng bộ ${res.mergedCount} cụm từ mới từ Cộng đồng/Nhóm!`);
+      } else {
+        setSyncMsg(`✨ Thư viện cụm từ đã được cập nhật mới nhất!`);
+      }
+      setTimeout(() => setSyncMsg(''), 4000);
+    } catch (err) {
+      console.error('Cloud sync error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Flashcard State
   const [flashcardIndex, setFlashcardIndex] = useState(0);
@@ -248,13 +269,38 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
           </button>
         </div>
 
-        <button
-          onClick={() => setActiveSubTab(activeSubTab === 'add' ? 'list' : 'add')}
-          className="px-2.5 py-1 bg-emerald-300 border-[1.8px] border-slate-900 text-slate-900 rounded-lg text-xs font-black flex items-center gap-1 shadow-[2px_2px_0px_0px_#18181B] hover:bg-emerald-400 transition-all"
-        >
-          <Plus className="w-4 h-4" /> Thêm Cụm Từ
-        </button>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={handleSyncClick}
+            disabled={isSyncing}
+            className="px-2 py-1 bg-indigo-100 border-[1.8px] border-slate-900 text-indigo-950 rounded-lg text-xs font-black flex items-center gap-1 shadow-[2px_2px_0px_0px_#18181B] hover:bg-indigo-200 transition-all disabled:opacity-60"
+            title="Tải & đồng bộ cụm từ mới nhất từ Cộng đồng / Nhóm học tập"
+          >
+            <Globe className={`w-3.5 h-3.5 text-indigo-700 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Đang tải...' : 'Đồng bộ Cloud'}
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab(activeSubTab === 'add' ? 'list' : 'add')}
+            className="px-2 py-1 bg-emerald-300 border-[1.8px] border-slate-900 text-slate-900 rounded-lg text-xs font-black flex items-center gap-1 shadow-[2px_2px_0px_0px_#18181B] hover:bg-emerald-400 transition-all"
+          >
+            <Plus className="w-4 h-4" /> Thêm Cụm Từ
+          </button>
+        </div>
       </div>
+
+      {/* Cloud Sync Alert Banner */}
+      {syncMsg && (
+        <div className="p-2.5 bg-indigo-100 border-[1.8px] border-slate-900 text-indigo-950 text-xs font-black rounded-xl shadow-[2px_2px_0px_0px_#18181B] flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Globe className="w-4 h-4 text-indigo-700 shrink-0" />
+            <span>{syncMsg}</span>
+          </div>
+          <button onClick={() => setSyncMsg('')} className="p-0.5 hover:bg-indigo-200 rounded">
+            <X className="w-3.5 h-3.5 text-indigo-900" />
+          </button>
+        </div>
+      )}
 
       {/* SUB-TAB 1: ADD PHRASE FORM */}
       {activeSubTab === 'add' && (
@@ -691,12 +737,25 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                     </div>
                   </div>
 
-                  {/* Render Usage Context Badge in Phrase Library */}
-                  {item.context && (
-                    <div className="inline-flex items-center gap-1 bg-[#FEF08A] border border-slate-900 px-2 py-0.5 rounded-md shadow-[1px_1px_0px_0px_#18181B] text-[10px] font-black text-slate-900">
-                      <Target className="w-3 h-3 text-slate-900" /> Bối cảnh: {item.context}
-                    </div>
-                  )}
+                  {/* Render Usage Context Badge & Author Badge in Phrase Library */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {item.context && (
+                      <div className="inline-flex items-center gap-1 bg-[#FEF08A] border border-slate-900 px-2 py-0.5 rounded-md shadow-[1px_1px_0px_0px_#18181B] text-[10px] font-black text-slate-900">
+                        <Target className="w-3 h-3 text-slate-900" /> Bối cảnh: {item.context}
+                      </div>
+                    )}
+                    {item.authorName && (
+                      <div className="inline-flex items-center gap-1 bg-indigo-50 border border-indigo-300 px-2 py-0.5 rounded-md shadow-[1px_1px_0px_0px_#18181B] text-[10px] font-black text-indigo-950">
+                        <span>{item.authorAvatar || '🎓'}</span>
+                        <span>Đóng góp: {item.authorName}</span>
+                        {item.spaceCode && item.spaceCode !== 'PUBLIC' && (
+                          <span className="bg-indigo-200 text-indigo-950 px-1 py-0.2 rounded text-[8.5px] font-black ml-0.5">
+                            👥 {item.spaceCode}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <p className="text-xs font-extrabold text-slate-900">
                     💡 {item.meaning}

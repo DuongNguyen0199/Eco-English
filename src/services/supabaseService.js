@@ -226,12 +226,35 @@ export const supabaseService = {
           authorName: item.user_id === currentUserId ? 'Bạn' : creator.nickname,
           authorAvatar: creator.avatar,
           spaceCode: extractedSpace,
-          isCommunity: true
+          isCommunity: true,
+          updated_at: item.updated_at
         };
       });
     } catch (err) {
       console.warn('Exception in fetchCommunityPhrases:', err.message);
       return [];
+    }
+  },
+
+  // Delete a phrase directly from Supabase phrases_vault table
+  async deletePhraseFromVault(phraseId) {
+    try {
+      if (!phraseId) return { success: false, error: 'Invalid phrase ID' };
+
+      const { data, error } = await supabase
+        .from('phrases_vault')
+        .delete()
+        .eq('id', phraseId);
+
+      if (error) {
+        console.warn('Supabase delete phrase warning:', error.message);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (err) {
+      console.warn('Supabase delete phrase exception:', err.message);
+      return { success: false, error: err.message };
     }
   }
 };

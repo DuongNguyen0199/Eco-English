@@ -64,8 +64,12 @@ export default function App() {
   };
 
   const handleDeletePhrase = async (phraseId) => {
+    // Delete directly from Supabase Database
+    await supabaseService.deletePhraseFromVault(phraseId);
+    // Delete from Local Storage
     const updated = await storageService.deletePhrase(phraseId);
     setPhrases(updated);
+    return updated;
   };
 
   const handleEditPhrase = async (phraseId, updatedObj) => {

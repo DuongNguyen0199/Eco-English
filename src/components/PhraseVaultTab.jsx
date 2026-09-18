@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CEFR_LEVELS, autoClassifyCEFR, autoGeneratePhonetic } from '../data/cefrData';
 import { speechService } from '../services/speechService';
 import { aiService } from '../services/aiService';
+import { storageService } from '../services/storageService';
 import { Plus, Search, Volume2, Trash2, Tag, BookMarked, Layers, Shuffle, Sparkles, Target, Pencil, X, Check, Wand2, AlertCircle, Globe, RefreshCw } from 'lucide-react';
 
 export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, onEditPhrase, onUpdateMastery, onSyncCommunity }) {
@@ -41,6 +42,56 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [duplicateError, setDuplicateError] = useState('');
   const [editDuplicateError, setEditDuplicateError] = useState('');
+
+  // Delete Phrase Verification State
+  const [deletingPhrase, setDeletingPhrase] = useState(null);
+  const [deleteSpaceInput, setDeleteSpaceInput] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleOpenDeleteModal = (item) => {
+    setDeletingPhrase(item);
+    setDeleteSpaceInput('');
+    setDeleteError('');
+  };
+
+  const handleConfirmDeleteSubmit = async (e) => {
+    e.preventDefault();
+    if (!deletingPhrase) return;
+
+    setDeleteError('');
+    setIsDeleting(true);
+
+    try {
+      const activeLearnSpace = await storageService.getLearnSpace();
+      const cleanInput = deleteSpaceInput.trim().toUpperCase();
+
+      // Expected code: phrase's spaceCode (if set and not PUBLIC) OR user's active learnSpace
+      const itemSpaceCode = (deletingPhrase.spaceCode && deletingPhrase.spaceCode !== 'PUBLIC')
+        ? deletingPhrase.spaceCode.trim().toUpperCase()
+        : (activeLearnSpace || 'PUBLIC');
+
+      const isMatch = (cleanInput === itemSpaceCode) || (cleanInput === activeLearnSpace);
+
+      if (!isMatch || !cleanInput) {
+        setDeleteError(`❌ Mã Không gian học tập không chính xác! Cần nhập đúng mã "${itemSpaceCode}" để xóa.`);
+        setIsDeleting(false);
+        return;
+      }
+
+      // Learn Space code is correct -> proceed to delete directly in Database & Local Storage
+      await onDeletePhrase(deletingPhrase.id);
+
+      setSyncMsg(`✅ Đã xóa vĩnh viễn cụm từ "${deletingPhrase.phrase}" khỏi Database & Thư viện!`);
+      setTimeout(() => setSyncMsg(''), 4000);
+      setDeletingPhrase(null);
+    } catch (err) {
+      console.error('Error deleting phrase:', err);
+      setDeleteError('Lỗi khi xóa cụm từ. Vui lòng thử lại!');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleAutoGenerateExample = async (targetPhrase, targetMeaning, targetContext = '', isEditMode = false) => {
     if (!targetPhrase || !targetPhrase.trim()) return;
@@ -83,7 +134,28 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
   const [autoLevelDetected, setAutoLevelDetected] = useState('B1');
   const [autoPhoneticDetected, setAutoPhoneticDetected] = useState('');
 
-  const filteredPhrases = phrases.filter(p => {
+  // Helper to parse timestamp for sorting DESC
+  const parseTs = (item) => {
+    if (item.updated_at) {
+      const t = new Date(item.updated_at).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    if (item.id) {
+      const match = String(item.id).match(/\d{10,}/);
+      if (match) return parseInt(match[0], 10);
+    }
+    return 0;
+  };
+
+  // Sort phrases in DESC order (newest added/updated phrases at the top)
+  const sortedPhrases = [...phrases].sort((a, b) => {
+    const tsA = parseTs(a);
+    const tsB = parseTs(b);
+    if (tsA !== tsB) return tsB - tsA; // DESC (newest timestamp first)
+    return 0;
+  });
+
+  const filteredPhrases = sortedPhrases.filter(p => {
     const matchesSearch = p.phrase.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (p.phonetic && p.phonetic.toLowerCase().includes(searchTerm.toLowerCase())) ||
                           p.meaning.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -728,9 +800,9 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                         <Pencil className="w-3.5 h-3.5 text-slate-900" />
                       </button>
                       <button
-                        onClick={() => onDeletePhrase(item.id)}
+                        onClick={() => handleOpenDeleteModal(item)}
                         className="p-1 text-slate-900 bg-rose-100 border border-slate-900 rounded hover:bg-rose-200 transition-colors shadow-[1px_1px_0px_0px_#18181B]"
-                        title="Xóa cụm từ này"
+                        title="Xóa cụm từ này khỏi Database"
                       >
                         <Trash2 className="w-3.5 h-3.5 text-slate-900" />
                       </button>
@@ -951,6 +1023,84 @@ export default function PhraseVaultTab({ phrases, onAddPhrase, onDeletePhrase, o
                   className="px-4 py-1 bg-[#FEF08A] border-[1.8px] border-slate-900 text-slate-900 rounded-lg text-xs font-black shadow-[1.8px_1.8px_0px_0px_#18181B] hover:bg-amber-300 flex items-center gap-1"
                 >
                   <Check className="w-3.5 h-3.5 text-slate-900" /> Lưu Thay Đổi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE PHRASE CONFIRMATION MODAL WITH LEARN SPACE VERIFICATION */}
+      {deletingPhrase && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-3">
+          <div className="bg-[#FFFDF5] rounded-2xl max-w-xs w-full p-4 border-[1.8px] border-slate-900 shadow-[3.5px_3.5px_0px_0px_#18181B] space-y-3 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b-[1.8px] border-slate-900 pb-2">
+              <h3 className="text-xs font-black text-rose-600 uppercase flex items-center gap-1.5">
+                <Trash2 className="w-4 h-4 text-rose-600" /> Xác Nhận Xóa Trong Database
+              </h3>
+              <button
+                onClick={() => setDeletingPhrase(null)}
+                className="p-1 bg-white border border-slate-900 rounded-lg shadow-[1px_1px_0px_0px_#18181B] text-slate-900 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-300 text-xs space-y-1 text-rose-950 font-bold">
+              <p className="font-extrabold text-rose-900 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" /> Cụm từ cần xóa:
+              </p>
+              <p className="text-sm font-black text-slate-900 font-sans">"{deletingPhrase.phrase}"</p>
+              <p className="text-[11px] text-slate-700 italic">💡 {deletingPhrase.meaning}</p>
+              <p className="text-[9.5px] font-bold text-rose-800 pt-1">
+                ⚠️ Cảnh báo: Cụm từ sẽ bị xóa VĨNH VIỄN trực tiếp khỏi Database Supabase và Thư viện cá nhân.
+              </p>
+            </div>
+
+            <form onSubmit={handleConfirmDeleteSubmit} className="space-y-2.5">
+              <div>
+                <label className="block text-[11px] font-black text-slate-900 mb-0.5 flex items-center justify-between">
+                  <span>Mã Không gian học tập (Learn Space) (*)</span>
+                  <span className="text-[9px] font-bold text-indigo-900 bg-indigo-100 border border-indigo-300 px-1 py-0.2 rounded">
+                    Bảo mật xóa
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nhập mã Learn Space (e.g. ECO2026 hoặc PUBLIC)..."
+                  value={deleteSpaceInput}
+                  onChange={e => setDeleteSpaceInput(e.target.value)}
+                  className={`w-full px-2.5 py-1.5 text-xs rounded-lg border-[1.5px] font-extrabold uppercase tracking-wider focus:outline-none focus:bg-[#FFFDF0] ${
+                    deleteError ? 'border-rose-500 bg-rose-50' : 'border-slate-900'
+                  }`}
+                />
+                <p className="text-[9.5px] text-slate-600 font-semibold mt-1">
+                  🔒 Để xóa, bạn phải nhập đúng Mã Không Gian Học Tập của nhóm/công khai.
+                </p>
+              </div>
+
+              {deleteError && (
+                <div className="flex items-center gap-1.5 p-2 bg-rose-100 border border-rose-500 text-rose-950 text-[10.5px] font-extrabold rounded-lg shadow-[1px_1px_0px_0px_#18181B]">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{deleteError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-2 border-t-[1.5px] border-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setDeletingPhrase(null)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-black text-slate-700 bg-slate-100 border-[1.5px] border-slate-900"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className="px-3.5 py-1.5 bg-rose-500 border-[1.8px] border-slate-900 text-white rounded-lg text-xs font-black shadow-[1.8px_1.8px_0px_0px_#18181B] hover:bg-rose-600 flex items-center gap-1 disabled:opacity-60"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> {isDeleting ? 'Đang xóa DB...' : 'Xác Nhận Xóa'}
                 </button>
               </div>
             </form>

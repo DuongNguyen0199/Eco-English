@@ -6,7 +6,7 @@ import { Settings, RefreshCcw, Download, X, Target, User, Sparkles, AlertCircle,
 
 const AVATAR_OPTIONS = ['🎓', '🦊', '⚡', '👑', '🔥', '🚀', '🦉', '⭐', '🐯', '💎'];
 
-export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChange, phrases, onResetData, xp = 0, streak = 1, onSyncCommunity }) {
+export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChange, phrases, onResetData, xp = 0, streak = 1, onSyncCommunity, onOpenLogin }) {
   const [nickname, setNickname] = useState('Học Viên Eco');
   const [selectedAvatar, setSelectedAvatar] = useState('🎓');
   const [learnSpace, setLearnSpace] = useState('PUBLIC');
@@ -247,9 +247,21 @@ export default function SettingsModal({ isOpen, onClose, userLevel, onLevelChang
           </div>
         </div>
 
-        {/* 3. BACKUP & EXPORT DATA */}
+        {/* 3. SWITCH ACCOUNT & BACKUP */}
         <div className="space-y-1.5 pt-2 border-t-[1.8px] border-slate-900">
-          <label className="block text-xs font-black text-slate-900">Sao Lưu Dữ Liệu</label>
+          <label className="block text-xs font-black text-slate-900">Tài Khoản & Sao Lưu</label>
+          
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenLogin && onOpenLogin();
+            }}
+            className="w-full py-1.5 px-3 bg-indigo-100 border-[1.8px] border-slate-900 text-indigo-950 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-[1.8px_1.8px_0px_0px_#18181B] hover:bg-indigo-200"
+          >
+            <User className="w-3.5 h-3.5 text-indigo-700" /> Đổi Tài Khoản / Đăng Nhập Lại
+          </button>
+
           <button
             onClick={handleExport}
             className="w-full py-1.5 px-3 bg-white border-[1.8px] border-slate-900 text-slate-900 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-[1.8px_1.8px_0px_0px_#18181B] hover:bg-slate-100"

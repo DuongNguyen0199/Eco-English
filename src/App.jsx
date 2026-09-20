@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SidePanelLayout from './components/SidePanelLayout';
+import LoginModal from './components/LoginModal';
 import { storageService } from './services/storageService';
 import { INITIAL_PHRASES } from './data/cefrData';
 
@@ -11,9 +12,17 @@ export default function App() {
   const [streak, setStreak] = useState(1);
   const [xp, setXp] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
+      const loggedIn = await storageService.isLoggedIn();
+      if (!loggedIn) {
+        setIsLoginOpen(true);
+        setLoading(false);
+        return;
+      }
+
       const { phrases: storedPhrases, level, streak: storedStreak, xp: storedXP } = await storageService.initData();
       setUserLevel(level);
 
@@ -35,6 +44,31 @@ export default function App() {
     }
     loadData();
   }, []);
+
+  const handleLoginSuccess = async (res) => {
+    setIsLoginOpen(false);
+    setLoading(true);
+
+    const { phrases: storedPhrases, level, streak: storedStreak, xp: storedXP } = await storageService.initData();
+    setUserLevel(res.userLevel || level || 'B1');
+    setStreak(res.streak || storedStreak || 1);
+    setXp(res.xp !== undefined ? res.xp : (storedXP || 0));
+
+    // Fetch & merge community/space phrases after login
+    const commPhrases = await supabaseService.fetchCommunityPhrases();
+    const { phrases: finalPhrases } = await storageService.mergeCommunityPhrases(commPhrases);
+    setPhrases(finalPhrases);
+
+    setLoading(false);
+
+    // Sync to Supabase Cloud
+    supabaseService.syncUserProgress({
+      xp: res.xp !== undefined ? res.xp : (storedXP || 0),
+      streak: res.streak || storedStreak || 1,
+      userLevel: res.userLevel || level || 'B1'
+    });
+    supabaseService.syncPhrasesVault(finalPhrases);
+  };
 
   // Auto-sync whenever progress or phrases change
   useEffect(() => {
@@ -113,20 +147,28 @@ export default function App() {
   }
 
   return (
-    <SidePanelLayout
-      userLevel={userLevel}
-      onLevelChange={handleLevelChange}
-      phrases={phrases}
-      streak={streak}
-      xp={xp}
-      onAddXP={handleAddXP}
-      onAddPhrase={handleAddPhrase}
-      onDeletePhrase={handleDeletePhrase}
-      onEditPhrase={handleEditPhrase}
-      onUpdateMastery={handleUpdateMastery}
-      onFinishLesson={handleFinishLesson}
-      onResetData={handleResetData}
-      onSyncCommunity={handleSyncCommunity}
-    />
+    <>
+      <SidePanelLayout
+        userLevel={userLevel}
+        onLevelChange={handleLevelChange}
+        phrases={phrases}
+        streak={streak}
+        xp={xp}
+        onAddXP={handleAddXP}
+        onAddPhrase={handleAddPhrase}
+        onDeletePhrase={handleDeletePhrase}
+        onEditPhrase={handleEditPhrase}
+        onUpdateMastery={handleUpdateMastery}
+        onFinishLesson={handleFinishLesson}
+        onResetData={handleResetData}
+        onSyncCommunity={handleSyncCommunity}
+        onOpenLogin={() => setIsLoginOpen(true)}
+      />
+
+      <LoginModal
+        isOpen={isLoginOpen}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    </>
   );
 }

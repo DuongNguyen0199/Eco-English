@@ -8,7 +8,8 @@ const STORAGE_KEYS = {
   COMPLETED_LESSONS: 'eco_eng_completed_lessons',
   STATS: 'eco_eng_stats',
   XP: 'eco_eng_xp',
-  LEARN_SPACE: 'eco_eng_learn_space'
+  LEARN_SPACE: 'eco_eng_learn_space',
+  IS_LOGGED_IN: 'eco_eng_is_logged_in'
 };
 
 /**
@@ -305,5 +306,14 @@ export const storageService = {
     }
 
     return { mergedCount, phrases: updatedPhrases };
+  },
+
+  // Login State Management
+  async isLoggedIn() {
+    return await this.get(STORAGE_KEYS.IS_LOGGED_IN, false);
+  },
+
+  async setLoggedIn(status = true) {
+    return await this.set(STORAGE_KEYS.IS_LOGGED_IN, status);
   }
 };

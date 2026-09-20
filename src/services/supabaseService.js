@@ -68,13 +68,16 @@ export const supabaseService = {
     try {
       const userId = await this.getUserId();
       const { nickname, avatar } = await this.getUserProfile();
+      const learnSpace = await storageService.getLearnSpace();
+
+      const compositeLevel = learnSpace ? `${userLevel}|${learnSpace}` : userLevel;
 
       const payload = {
         id: userId,
         display_name: nickname,
         xp: Number(xp),
         streak: Number(streak),
-        user_level: userLevel,
+        user_level: compositeLevel,
         avatar: avatar,
         updated_at: new Date().toISOString()
       };
@@ -109,10 +112,123 @@ export const supabaseService = {
         return [];
       }
 
-      return data;
+      return data.map(item => {
+        let cleanLevel = item.user_level || 'B1';
+        if (cleanLevel.includes('|')) {
+          cleanLevel = cleanLevel.split('|')[0];
+        }
+        return {
+          ...item,
+          user_level: cleanLevel
+        };
+      });
     } catch (err) {
       console.warn('Error fetching leaderboard:', err.message);
       return [];
+    }
+  },
+
+  // Login or Register User Account (Matches Name + Learn Space Pair)
+  async loginOrRegisterAccount(nicknameText, spaceCodeText, avatarIcon = '🎓') {
+    try {
+      const cleanName = (nicknameText || '').trim();
+      const cleanSpace = (spaceCodeText || 'PUBLIC').trim().toUpperCase() || 'PUBLIC';
+
+      if (!cleanName) {
+        return { isError: true, message: 'Tên hiển thị không được để trống!' };
+      }
+
+      // Fetch existing user profiles from Supabase
+      const { data: users, error } = await supabase
+        .from('user_progress')
+        .select('*');
+
+      if (error) {
+        console.warn('Supabase login check error:', error.message);
+      }
+
+      let matchedUser = null;
+      let nameTakenOtherSpace = false;
+
+      if (users && Array.isArray(users)) {
+        for (const u of users) {
+          if (!u.display_name) continue;
+          if (u.display_name.trim().toLowerCase() === cleanName.toLowerCase()) {
+            // Check matching spaceCode from user_level "LEVEL|SPACE"
+            let uSpace = 'PUBLIC';
+            if (u.user_level && u.user_level.includes('|')) {
+              uSpace = u.user_level.split('|')[1].trim().toUpperCase();
+            }
+
+            if (uSpace === cleanSpace) {
+              matchedUser = u;
+              break;
+            } else {
+              nameTakenOtherSpace = true;
+            }
+          }
+        }
+      }
+
+      if (nameTakenOtherSpace && !matchedUser) {
+        return {
+          isError: true,
+          message: `❌ Tên "${cleanName}" đã được dùng ở Mã Không Gian khác! Nhập đúng Mã Learn Space hoặc chọn Tên khác.`
+        };
+      }
+
+      if (matchedUser) {
+        // --- RESTORE EXISTING ACCOUNT ---
+        let cleanLevel = matchedUser.user_level || 'B1';
+        if (cleanLevel.includes('|')) cleanLevel = cleanLevel.split('|')[0];
+
+        await storageService.set('eco_eng_user_id', matchedUser.id);
+        await storageService.set('eco_eng_nickname', matchedUser.display_name);
+        await storageService.set('eco_eng_avatar', matchedUser.avatar || avatarIcon);
+        await storageService.set('eco_eng_xp', Number(matchedUser.xp || 0));
+        await storageService.set('eco_eng_streak', Number(matchedUser.streak || 1));
+        await storageService.set('eco_eng_level', cleanLevel);
+        await storageService.setLearnSpace(cleanSpace);
+        await storageService.setLoggedIn(true);
+
+        return {
+          isExisting: true,
+          userId: matchedUser.id,
+          nickname: matchedUser.display_name,
+          avatar: matchedUser.avatar || avatarIcon,
+          xp: Number(matchedUser.xp || 0),
+          streak: Number(matchedUser.streak || 1),
+          userLevel: cleanLevel,
+          learnSpace: cleanSpace,
+          message: `🎉 Khôi phục tài khoản cũ "${matchedUser.display_name}" thành công!`
+        };
+      } else {
+        // --- REGISTER NEW ACCOUNT ---
+        let newUserId = 'usr_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+        await storageService.set('eco_eng_user_id', newUserId);
+        await storageService.set('eco_eng_nickname', cleanName);
+        await storageService.set('eco_eng_avatar', avatarIcon);
+        await storageService.setLearnSpace(cleanSpace);
+        await storageService.setLoggedIn(true);
+
+        // Sync new user profile to Supabase
+        await this.syncUserProgress({ xp: 0, streak: 1, userLevel: 'B1' });
+
+        return {
+          isNew: true,
+          userId: newUserId,
+          nickname: cleanName,
+          avatar: avatarIcon,
+          xp: 0,
+          streak: 1,
+          userLevel: 'B1',
+          learnSpace: cleanSpace,
+          message: `✨ Tạo tài khoản mới "${cleanName}" thành công!`
+        };
+      }
+    } catch (err) {
+      console.error('Login exception:', err);
+      return { isError: true, message: 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!' };
     }
   },
 

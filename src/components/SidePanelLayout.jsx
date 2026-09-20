@@ -21,7 +21,8 @@ export default function SidePanelLayout({
   onEditPhrase,
   onUpdateMastery,
   onResetData,
-  onSyncCommunity
+  onSyncCommunity,
+  onOpenLogin
 }) {
   const [activeTab, setActiveTab] = useState('vault'); // Default: 'vault' (Lật thẻ SRS)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -214,6 +215,7 @@ export default function SidePanelLayout({
         xp={xp}
         streak={streak}
         onSyncCommunity={onSyncCommunity}
+        onOpenLogin={onOpenLogin}
       />
 
       {/* Supabase Leaderboard Modal */}

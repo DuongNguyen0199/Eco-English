@@ -1,86 +1,141 @@
 /**
  * AI Sentence Generator & Translation Engine for Eco English
- * Generates highly natural, context-aware English example sentences and fluent Vietnamese translations.
+ * Generates concise (6-12 words), highly natural, context-aware English example sentences
+ * based on input phrase, meaning, and usage context, along with fluent Vietnamese translations.
  */
 
-// Comprehensive Context-Aware Natural English Sentence Database & Dynamic Scenario Generators
-const SCENARIO_GENERATORS = [
-  // 1. Workplace, Meetings & Projects
+// Dictionary of concise spoken expressions & fixed idioms (kept short & crisp)
+const EXPRESSIONS_DICTIONARY = {
+  "i'm having second thoughts": "I was about to sign, but now I'm having second thoughts.",
+  "im having second thoughts": "I was going to buy it, but now I'm having second thoughts.",
+  "having second thoughts": "She is having second thoughts about moving abroad.",
+  "come again": "Could you come again? I didn't hear you clearly.",
+  "it's up to you": "Whether we stay or leave is entirely up to you.",
+  "its up to you": "Which restaurant we pick for dinner is up to you.",
+  "i get it": "Thanks for explaining so clearly; now I get it.",
+  "break the ice": "A quick joke helped break the ice at the meeting.",
+  "keep in touch": "Let's keep in touch after the project ends.",
+  "take a risk": "Sometimes you need to take a risk to succeed.",
+  "make progress": "She is making steady progress in her English speaking.",
+  "look on the bright side": "Even after setbacks, try to look on the bright side.",
+  "give up": "Never give up on your goals, no matter what.",
+  "come across": "I came across an interesting article earlier today.",
+  "hit the nail on the head": "Your analysis really hit the nail on the head.",
+  "out of the blue": "An old friend called me out of the blue.",
+  "once in a blue moon": "He visits his hometown only once in a blue moon.",
+  "pave the way for": "This innovation paved the way for future developments.",
+  "take into account": "We must take all extra expenses into account.",
+  "a double-edged sword": "Social media can be a double-edged sword nowadays.",
+  "play a vital role in": "Education plays a vital role in personal growth.",
+  "cut down on": "He decided to cut down on sugary drinks.",
+  "shed light on": "The latest report sheds light on the main issue.",
+  "strike a balance": "It is essential to strike a healthy work-life balance.",
+  "at the expense of": "He gained quick success at the expense of his health.",
+  "call into question": "The audit results called into question the financial figures.",
+  "stem from": "Most misunderstandings stem from poor communication.",
+  "tipping point": "The ecosystem is reaching a critical tipping point.",
+  "part and parcel of": "Overcoming obstacles is part and parcel of success.",
+  "in lieu of": "They offered additional vacation days in lieu of cash.",
+  "wreak havoc on": "The heavy storm wreaked havoc on coastal towns.",
+  "bear fruit": "Her hard work finally bore fruit after two years."
+};
+
+// Short Context & Meaning Scenario Patterns (Strictly 6 - 12 words)
+const CONCISE_SCENARIOS = [
+  // 1. Work, Job, Meeting, Project & Report (Công việc, Họp, Dự án, Báo cáo, Kế hoạch)
   {
-    tags: ['work', 'job', 'project', 'meeting', 'họp', 'công việc', 'dự án', 'báo cáo', 'email', 'chính thức', 'formal', 'lập kế hoạch'],
+    tags: ['work', 'job', 'project', 'meeting', 'họp', 'công việc', 'dự án', 'báo cáo', 'email', 'chính thức', 'formal', 'kế hoạch', 'công ty', 'văn phòng', 'sáng tạo'],
     templates: [
-      (p) => `During yesterday's team meeting, we had to ${p} to ensure the project stays on schedule.`,
-      (p) => `Our project manager encouraged everyone to ${p} before submitting the final proposal.`,
-      (p) => `She successfully managed to ${p} during the client presentation this morning.`,
-      (p) => `To achieve our quarterly goals, it is essential for the team to ${p}.`
+      (p) => `Our team must ${p} before the final deadline.`,
+      (p) => `She managed to ${p} during the morning meeting.`,
+      (p) => `We need a clear strategy to ${p} effectively.`,
+      (p) => `The project manager asked us to ${p} today.`
+    ],
+    prepositionalTemplates: [
+      (p) => `${capitalize(p)}, the project went smoother than expected.`,
+      (p) => `The team accepted the proposal ${p}.`,
+      (p) => `We reviewed the quarterly report ${p}.`
     ]
   },
-  // 2. Decision Making & Problem Solving
+
+  // 2. Decision, Thought, Option & Hesitation (Quyết định, Suy nghĩ, Do dự, Cân nhắc, Lựa chọn)
   {
-    tags: ['decision', 'think', 'idea', 'solution', 'quyết định', 'suy nghĩ', 'ý tưởng', 'giải pháp', 'do dự', 'cân nhắc', 'lựa chọn'],
+    tags: ['decision', 'think', 'idea', 'choice', 'quyết định', 'suy nghĩ', 'ý tưởng', 'do dự', 'cân nhắc', 'lựa chọn', 'giải pháp', 'nhận định'],
     templates: [
-      (p) => `After reviewing all available choices, she decided to ${p} for long-term success.`,
-      (p) => `Finding an effective way to ${p} helped us resolve the issue without further delay.`,
-      (p) => `It requires careful consideration to ${p} when facing complex situations.`,
-      (p) => `Before making a commitment, you should always take time to ${p}.`
+      (p) => `After careful thought, he decided to ${p}.`,
+      (p) => `Take your time to ${p} before choosing.`,
+      (p) => `Finding a way to ${p} solved the entire issue.`,
+      (p) => `It is important to ${p} when facing tough choices.`
+    ],
+    prepositionalTemplates: [
+      (p) => `${capitalize(p)}, the decision seemed obvious to everyone.`,
+      (p) => `He made his choice ${p}.`
     ]
   },
-  // 3. Finance, Tech, Business & Academic
+
+  // 3. Finance, Tech, Business & Academic (Tài chính, Công nghệ, Kinh tế, Ngân sách, Chi phí, Nghiên cứu)
   {
-    tags: ['money', 'finance', 'budget', 'cost', 'tech', 'ai', 'academic', 'ielts', 'kinh tế', 'tài chính', 'ngân sách', 'chi phí', 'công nghệ', 'nghiên cứu'],
+    tags: ['money', 'finance', 'budget', 'cost', 'tech', 'academic', 'ielts', 'tài chính', 'công nghệ', 'ngân sách', 'chi phí', 'nghiên cứu', 'tác động'],
     templates: [
-      (p) => `Recent market research shows that companies must ${p} to stay competitive.`,
-      (p) => `This technological breakthrough will help ${p} for future developments in the industry.`,
-      (p) => `Financial advisors strongly recommend that individuals ${p} to minimize risks.`,
-      (p) => `The study sheds light on how organizations can ${p} more effectively.`
+      (p) => `This new technique will help ${p} efficiently.`,
+      (p) => `Financial experts advise companies to ${p} early.`,
+      (p) => `The study sheds light on how to ${p}.`,
+      (p) => `Technology enables us to ${p} more easily.`
+    ],
+    prepositionalTemplates: [
+      (p) => `${capitalize(p)}, market trends indicate steady growth.`,
+      (p) => `The company adjusted its budget ${p}.`
     ]
   },
-  // 4. Daily Life, Health & Relationships
+
+  // 4. Daily Life, Health, Friends & Communication (Giao tiếp, Đời sống, Bạn bè, Sức khỏe, Thói quen)
   {
-    tags: ['life', 'health', 'daily', 'friend', 'time', 'sức khỏe', 'đời sống', 'bạn bè', 'thời gian', 'thói quen', 'giao tiếp'],
+    tags: ['life', 'health', 'daily', 'friend', 'talk', 'giao tiếp', 'đời sống', 'bạn bè', 'sức khỏe', 'thói quen', 'nói chuyện'],
     templates: [
-      (p) => `My doctor advised me to ${p} in order to maintain a healthier lifestyle.`,
-      (p) => `Even though we live in different cities, we still try to ${p} as often as possible.`,
-      (p) => `Whenever you feel stressed, taking time to ${p} can make a huge difference.`,
-      (p) => `Learning how to ${p} is one of the most rewarding parts of personal growth.`
+      (p) => `In daily conversations, try to ${p} more often.`,
+      (p) => `My doctor recommended that I ${p} regularly.`,
+      (p) => `Whenever you feel stressed, take time to ${p}.`,
+      (p) => `Learning to ${p} makes daily life much easier.`
+    ],
+    prepositionalTemplates: [
+      (p) => `${capitalize(p)}, everything turned out just fine.`,
+      (p) => `She shares her thoughts with friends ${p}.`
     ]
   }
 ];
 
-// Spoken idioms & fixed full sentence expressions override
-const EXPRESSIONS_DICTIONARY = {
-  "i'm having second thoughts": "I was going to buy that expensive car, but now I'm having second thoughts.",
-  "im having second thoughts": "I was going to sign the contract, but now I'm having second thoughts.",
-  "come again": "Could you come again? I couldn't hear what you just said.",
-  "it's up to you": "You can choose either Italian or Japanese food for dinner; it's up to you.",
-  "its up to you": "Whether we leave now or wait a bit longer is entirely up to you.",
-  "i get it": "Thanks for explaining the problem so clearly; now I get it.",
-  "break the ice": "A warm smile and a light joke helped break the ice at the start of the conference.",
-  "keep in touch": "Let's keep in touch after graduation.",
-  "take a risk": "Sometimes you need to take a risk to achieve your biggest dreams.",
-  "make progress": "She has been making great progress in her English speaking skills this month.",
-  "look on the bright side": "Even when plans fall through, I try to look on the bright side.",
-  "give up": "Never give up on your goals, no matter how tough the journey gets.",
-  "come across": "I came across a rare vintage record while browsing the local market.",
-  "hit the nail on the head": "Your analysis of the market trend really hit the nail on the head.",
-  "out of the blue": "An old college friend called me out of the blue yesterday evening.",
-  "once in a blue moon": "Because he lives abroad, he only comes back to visit once in a blue moon.",
-  "pave the way for": "This pioneering medical discovery paved the way for effective new treatments.",
-  "take into account": "You should take inflation and market volatility into account when budgeting.",
-  "a double-edged sword": "Social media can be a double-edged sword for teenagers nowadays.",
-  "play a vital role in": "Education plays a vital role in promoting sustainable economic growth.",
-  "cut down on": "To improve his physical fitness, he decided to cut down on sugary drinks.",
-  "shed light on": "The newly discovered historical documents shed light on the ancient civilization.",
-  "strike a balance": "It is essential to strike a healthy balance between work responsibilities and family life.",
-  "at the expense of": "He achieved career fame at the expense of his personal health.",
-  "call into question": "The recent audit results called into question the reliability of the company's records.",
-  "stem from": "Most interpersonal conflicts stem from poor communication and misunderstandings.",
-  "tipping point": "Scientists warn that deforestation is bringing the ecosystem close to a critical tipping point.",
-  "part and parcel of": "Overcoming temporary setbacks is part and parcel of building a successful business.",
-  "in lieu of": "The organization provided additional paid vacation days in lieu of cash bonuses.",
-  "wreak havoc on": "The severe tropical storm wreaked havoc on the coastal infrastructure.",
-  "bear fruit": "Her years of persistent dedication finally bore fruit when she published her novel."
-};
+// Fallback short templates for phrases without matched tags
+const DEFAULT_SHORT_TEMPLATES = [
+  (p) => `You should ${p} whenever the opportunity arises.`,
+  (p) => `It is essential to ${p} in this situation.`,
+  (p) => `They are working hard to ${p} right now.`,
+  (p) => `Learning how to ${p} takes daily practice.`
+];
+
+const DEFAULT_PREPOSITIONAL_TEMPLATES = [
+  (p) => `${capitalize(p)}, the outcome was surprisingly positive.`,
+  (p) => `Everything went according to plan ${p}.`,
+  (p) => `She handled the whole situation ${p}.`
+];
+
+// Helper to capitalize first letter
+function capitalize(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Helper to check if a phrase starts with a preposition/adverb
+function isPrepositionalPhrase(phrase) {
+  const prepWords = ['at', 'in', 'on', 'out of', 'by', 'from', 'under', 'with', 'as', 'for', 'to', 'through'];
+  const lower = phrase.trim().toLowerCase();
+  return prepWords.some(w => lower.startsWith(w + ' '));
+}
+
+// Helper to check if a phrase is a noun phrase
+function isNounPhrase(phrase) {
+  const lower = phrase.trim().toLowerCase();
+  return lower.startsWith('a ') || lower.startsWith('an ') || lower.startsWith('the ');
+}
 
 export const aiService = {
   /**
@@ -122,7 +177,7 @@ export const aiService = {
 
   /**
    * Main Generator Method:
-   * Generates a context-aware natural English sentence using the phrase, and its accurate Vietnamese translation.
+   * Generates a short (6-12 words), context-driven, meaning-matched English sentence and its accurate Vietnamese translation.
    */
   async generateExampleAndTranslation(phraseText = '', meaningText = '', contextText = '') {
     if (!phraseText || !phraseText.trim()) {
@@ -132,37 +187,54 @@ export const aiService = {
     const cleanPhrase = phraseText.trim();
     const lowerPhrase = cleanPhrase.toLowerCase();
 
-    // 1. Check fixed expression dictionary first
+    // 1. Check fixed expression dictionary first (shortened versions)
     if (EXPRESSIONS_DICTIONARY[lowerPhrase]) {
       const exampleEn = EXPRESSIONS_DICTIONARY[lowerPhrase];
       const translationVi = await this.translateToVietnamese(exampleEn);
       return { example: exampleEn, translation: translationVi };
     }
 
-    // 2. Determine best scenario templates based on user context or meaning tags
-    const combinedContext = `${contextText} ${meaningText}`.toLowerCase();
-    let matchedScenario = SCENARIO_GENERATORS.find(sc => 
-      sc.tags.some(tag => combinedContext.includes(tag))
+    // 2. Find best scenario based on combined context & meaning text
+    const combinedSearchText = `${contextText} ${meaningText}`.toLowerCase();
+    let matchedScenario = CONCISE_SCENARIOS.find(sc =>
+      sc.tags.some(tag => combinedSearchText.includes(tag))
     );
 
-    if (!matchedScenario) {
-      // Default to workplace / project scenarios
-      matchedScenario = SCENARIO_GENERATORS[0];
+    // 3. Select templates based on grammatical structure of phrase
+    let availableTemplates = [];
+    const isPrep = isPrepositionalPhrase(cleanPhrase);
+    const isNoun = isNounPhrase(cleanPhrase);
+
+    if (matchedScenario) {
+      if (isPrep && matchedScenario.prepositionalTemplates) {
+        availableTemplates = matchedScenario.prepositionalTemplates;
+      } else {
+        availableTemplates = matchedScenario.templates;
+      }
+    } else {
+      if (isPrep) {
+        availableTemplates = DEFAULT_PREPOSITIONAL_TEMPLATES;
+      } else if (isNoun) {
+        availableTemplates = [
+          (p) => `This solution turned out to be ${p}.`,
+          (p) => `We should treat this situation as ${p}.`,
+          (p) => `The outcome served as ${p} for everyone.`
+        ];
+      } else {
+        availableTemplates = DEFAULT_SHORT_TEMPLATES;
+      }
     }
 
-    // Select a random template for variety on multiple clicks
-    const templates = matchedScenario.templates;
-    const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
-    
-    // Fit phrase into template
+    // Pick a template at random for variety on multiple clicks
+    const selectedTemplate = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
     let generatedEn = selectedTemplate(cleanPhrase);
 
-    // If phrase starts with capital letter or is an full sentence expression
+    // If phrase starts with capital letter and looks like a complete sentence, use directly
     if (cleanPhrase.match(/^[A-Z]/) && cleanPhrase.split(/\s+/).length > 3) {
       generatedEn = cleanPhrase;
     }
 
-    // Translate the generated natural sentence to Vietnamese via Google Translate GTX API
+    // 4. Translate generated sentence into fluent Vietnamese via Google GTX API
     let generatedVi = await this.translateToVietnamese(generatedEn);
 
     if (!generatedVi && meaningText) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { speechService } from '../services/speechService';
-import { RefreshCw, CheckCircle2, XCircle, Volume2, Trophy, Zap, Clock } from 'lucide-react';
+import { RefreshCw, CheckCircle2, XCircle, Volume2, Trophy, Zap, Clock, SkipForward } from 'lucide-react';
 
 export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, onAddXP }) {
   const [exerciseType, setExerciseType] = useState('cloze'); // 'cloze' | 'meaning' | 'unscramble' | 'tense'
@@ -353,6 +353,12 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
     }
   };
 
+  const handleSkipQuestion = () => {
+    setIsAnswered(true);
+    setIsCorrect(false);
+    setSelectedOption(null);
+  };
+
   if (!currentQuestion) {
     return (
       <div className="w-full p-6 text-center bg-white rounded-xl border-[1.8px] border-slate-900 shadow-[2px_2px_0px_0px_#18181B] space-y-2.5 mx-2 my-4">
@@ -441,13 +447,24 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
               </span>
             )}
           </span>
-          <button
-            onClick={() => speechService.speak((currentQuestion.questionText || '').replace('______', '...'))}
-            className="p-1 text-slate-900 bg-white border border-slate-900 rounded-lg shadow-[1px_1px_0px_0px_#18181B]"
-            title="Nghe đọc câu"
-          >
-            <Volume2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center space-x-1.5">
+            <button
+              onClick={() => speechService.speak((currentQuestion.questionText || '').replace('______', '...'))}
+              className="p-1 text-slate-900 bg-white border border-slate-900 rounded-lg shadow-[1px_1px_0px_0px_#18181B] hover:bg-slate-100"
+              title="Nghe đọc câu"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+            </button>
+            {!isAnswered && (
+              <button
+                onClick={() => generateQuestion()}
+                className="px-2 py-1 bg-[#FEF08A] border border-slate-900 text-slate-900 text-[10px] font-black rounded-lg shadow-[1px_1px_0px_0px_#18181B] hover:bg-amber-300 flex items-center gap-1 transition-all"
+                title="Bỏ qua và đổi sang câu mới"
+              >
+                <SkipForward className="w-3 h-3" /> Bỏ qua
+              </button>
+            )}
+          </div>
         </div>
 
         {/* MODE 1, 2, 4: MULTIPLE CHOICE (CLOZE / MEANING / TENSE) */}
@@ -552,14 +569,29 @@ export default function RandomExerciseTab({ phrases, onUpdateMastery, xp = 0, on
           </div>
         )}
 
+        {/* Skip Question Option */}
+        {!isAnswered && (
+          <button
+            onClick={handleSkipQuestion}
+            className="w-full py-2 bg-[#FFFDF0] border-[1.5px] border-slate-900 text-slate-800 font-extrabold text-xs rounded-xl shadow-[1.5px_1.5px_0px_0px_#18181B] hover:bg-amber-100 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 mt-2"
+          >
+            <SkipForward className="w-3.5 h-3.5 text-slate-800" /> Xem đáp án & Bỏ qua câu này
+          </button>
+        )}
+
         {/* Result & Explanation */}
         {isAnswered && (
-          <div className={`p-3 rounded-xl border-[1.8px] border-slate-900 space-y-1.5 shadow-[2px_2px_0px_0px_#18181B] ${isCorrect ? 'bg-emerald-200' : 'bg-rose-200'}`}>
+          <div className={`p-3 rounded-xl border-[1.8px] border-slate-900 space-y-1.5 shadow-[2px_2px_0px_0px_#18181B] ${isCorrect ? 'bg-emerald-200' : selectedOption === null && userUnscramble.length === 0 ? 'bg-amber-200' : 'bg-rose-200'}`}>
             <div className="flex items-center gap-1.5">
               {isCorrect ? (
                 <>
                   <CheckCircle2 className="w-4.5 h-4.5 text-slate-900" />
                   <span className="text-xs font-black text-slate-900">Chính xác! (+10 XP)</span>
+                </>
+              ) : selectedOption === null && userUnscramble.length === 0 ? (
+                <>
+                  <SkipForward className="w-4.5 h-4.5 text-slate-900" />
+                  <span className="text-xs font-black text-slate-900">Đã bỏ qua câu này!</span>
                 </>
               ) : (
                 <>
